@@ -1,0 +1,20 @@
+FileVersion = 1
+Projects = {beef-fps = {Path = "."}, raylib-beef = "*"}
+
+[Workspace]
+StartupProject = "beef-fps"
+
+[Configs.Debug.wasm32]
+AllocType = "CRT"
+EnableObjectDebugFlags = false
+EmitObjectAccessCheck = false
+
+[Configs.Paranoid.wasm32]
+AllocType = "CRT"
+EnableObjectDebugFlags = false
+EmitObjectAccessCheck = false
+
+[Configs.Test.wasm32]
+AllocType = "CRT"
+EnableObjectDebugFlags = false
+EmitObjectAccessCheck = false

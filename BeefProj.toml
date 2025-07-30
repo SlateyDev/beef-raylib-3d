@@ -1,0 +1,7 @@
+FileVersion = 1
+Dependencies = {corlib = "*", raylib-beef = "*"}
+
+[Project]
+Name = "beef-fps"
+TargetType = "BeefGUIApplication"
+StartupObject = "game.Program"
