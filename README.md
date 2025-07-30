@@ -1,4 +1,4 @@
-# Beef FPS Game
+# Beef Raylib 3D Game
 
 ## Overview
 This project is a game POC developed using BeefLang and using the raylib graphics library.

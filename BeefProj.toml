@@ -5,3 +5,6 @@ Dependencies = {corlib = "*", raylib-beef = "*"}
 Name = "beef-fps"
 TargetType = "BeefGUIApplication"
 StartupObject = "game.Program"
+
+[Configs.Debug.wasm32]
+OtherLinkFlags = "$(LinkFlags) --preload-file ../../../shaders"

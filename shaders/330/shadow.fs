@@ -6,7 +6,7 @@
 // Input vertex attributes (from vertex shader)
 in vec3 fragPosition;
 in vec2 fragTexCoord;
-//in vec4 fragColor;
+in vec4 fragColor;
 in vec3 fragNormal;
 
 // Input uniform values
@@ -46,7 +46,7 @@ void main()
     if (NdotL > 0.0) specCo = pow(max(0.0, dot(viewD, reflect(-(l), normal))), 16.0); // 16 refers to shine
     specular += specCo;
 
-    finalColor = (texelColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+    finalColor = (texelColor*fragColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
 
     // Shadow calculations
     vec4 fragPosLightSpace = lightVP * vec4(fragPosition, 1);
