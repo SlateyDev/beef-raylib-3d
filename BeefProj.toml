@@ -2,9 +2,10 @@ FileVersion = 1
 Dependencies = {corlib = "*", raylib-beef = "*"}
 
 [Project]
-Name = "beef-fps"
+Name = "beef-raylib-3d-game"
 TargetType = "BeefGUIApplication"
-StartupObject = "game.Program"
+StartupObject = "Program"
+DefaultNamespace = "game"
 
 [Configs.Debug.wasm32]
 OtherLinkFlags = "$(LinkFlags) --preload-file ../../../shaders"

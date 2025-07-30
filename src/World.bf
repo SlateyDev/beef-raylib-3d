@@ -2,8 +2,6 @@ using System;
 using System.Collections;
 using RaylibBeef;
 
-namespace game;
-
 class World
 {
     private List<uint8> mLevelData = new .() ~ delete(mLevelData);

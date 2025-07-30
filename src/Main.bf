@@ -2,8 +2,6 @@ using System;
 using System.Diagnostics;
 using RaylibBeef;
 
-namespace game;
-
 class Program
 {
 #if BF_PLATFORM_WASM

@@ -1,8 +1,6 @@
 using System;
 using RaylibBeef;
 
-namespace game;
-
 class Player
 {
     public Vector3 Position;

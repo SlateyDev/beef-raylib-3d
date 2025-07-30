@@ -1,8 +1,6 @@
 using System;
 using RaylibBeef;
 
-namespace game;
-
 static class MathUtils
 {
     public static Vector2 Vector2Add(Vector2 v1, Vector2 v2) {

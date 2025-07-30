@@ -1,8 +1,8 @@
 FileVersion = 1
-Projects = {beef-fps = {Path = "."}, raylib-beef = "*"}
+Projects = {beef-raylib-3d-game = {Path = "."}, raylib-beef = "*"}
 
 [Workspace]
-StartupProject = "beef-fps"
+StartupProject = "beef-raylib-3d-game"
 
 [Configs.Debug.wasm32]
 AllocType = "CRT"

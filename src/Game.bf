@@ -1,8 +1,6 @@
 using System;
 using RaylibBeef;
 
-namespace game;
-
 class Game 
 {
     private bool mIsRunning;
