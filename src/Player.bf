@@ -14,7 +14,7 @@ class Player
     public const float PLAYER_RADIUS = 0.5f; // Collision radius for the player
 
     private bool mMouseLocked = false;
-    private Vector2 mLastMousePos;
+    private bool mFirstMouse = false;
 
     public Camera3D camera;
 
@@ -22,7 +22,6 @@ class Player
         Position = startPosition;
         RotationAngle = 0.0f;
         PitchAngle = 0.0f;
-        mLastMousePos = Raylib.GetMousePosition();
     }
 
     // Update method signature
@@ -35,23 +34,13 @@ class Player
 
     private void HandleMouseInput() {
         // Toggle mouse lock with Escape key
-        if (Raylib.IsMouseButtonPressed(.MOUSE_BUTTON_RIGHT)) {
-            mMouseLocked = true;
-            Vector2 screenCenter = .(
-                Raylib.GetScreenWidth() / 2.0f,
-                Raylib.GetScreenHeight() / 2.0f
-            );
-            Raylib.SetMousePosition((int32)screenCenter.x, (int32)screenCenter.y);
-            mLastMousePos = Raylib.GetMousePosition();
-            Raylib.DisableCursor();
-        } else if (Raylib.IsMouseButtonReleased(.MOUSE_BUTTON_RIGHT)) {
-            mMouseLocked = false;
-            Raylib.EnableCursor();
-        }
 
         if (mMouseLocked) {
-            Vector2 mousePos = Raylib.GetMousePosition();
-            Vector2 mouseDelta = MathUtils.Vector2Subtract(mousePos, mLastMousePos);
+            Vector2 mouseDelta = Raylib.GetMouseDelta();
+            if (mFirstMouse) {
+                mFirstMouse = false;
+                return;
+            }
 
             // Update rotation angles based on mouse movement
             RotationAngle += mouseDelta.x * MouseSensitivity;
@@ -59,16 +48,16 @@ class Player
 
             // Clamp pitch to prevent camera flipping
             PitchAngle = Math.Clamp(PitchAngle, -89.0f, 89.0f);
+        }
 
-            // Center mouse position
-            Vector2 screenCenter = .(
-                Raylib.GetScreenWidth() / 2.0f,
-                Raylib.GetScreenHeight() / 2.0f
-            );
-            Raylib.SetMousePosition((int32)screenCenter.x, (int32)screenCenter.y);
-            mLastMousePos = screenCenter;
-        } else {
-            mLastMousePos = Raylib.GetMousePosition();
+        if (Raylib.IsMouseButtonPressed(.MOUSE_BUTTON_RIGHT)) {
+            mMouseLocked = true;
+            mFirstMouse = true;
+            Raylib.DisableCursor();
+            Raylib.GetMouseDelta();
+        } else if (Raylib.IsMouseButtonReleased(.MOUSE_BUTTON_RIGHT)) {
+            mMouseLocked = false;
+            Raylib.EnableCursor();
         }
     }
 
