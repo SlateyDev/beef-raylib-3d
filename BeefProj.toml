@@ -8,4 +8,7 @@ StartupObject = "Program"
 DefaultNamespace = "game"
 
 [Configs.Debug.wasm32]
-OtherLinkFlags = "$(LinkFlags) --preload-file ../../../shaders"
+OtherLinkFlags = "$(LinkFlags) --preload-file ../../../assets"
+
+[Configs.Release.wasm32]
+OtherLinkFlags = "$(LinkFlags) --preload-file ../../../assets"

@@ -26,15 +26,17 @@ class World
 
     public this()
     {
+        // Load models
+        LoadModels();
         CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
 #if BF_PLATFORM_WASM
-        char8* vsShaderFile = "shaders/100/shadow.vs";
-        char8* fsShaderFile = "shaders/100/shadow.fs";
+        char8* vsShaderFile = "assets/shaders/100/shadow.vs";
+        char8* fsShaderFile = "assets/shaders/100/shadow.fs";
 #else
-        char8* vsShaderFile = "shaders/330/shadow.vs";
-        char8* fsShaderFile = "shaders/330/shadow.fs";
+        char8* vsShaderFile = "assets/shaders/330/shadow.vs";
+        char8* fsShaderFile = "assets/shaders/330/shadow.fs";
 #endif
         
         // Initialize shadow mapping resources
@@ -64,6 +66,7 @@ class World
     }
 
     public ~this() {
+        DeleteContainerAndItems!(mModels);
         UnloadShadowmapRenderTexture(mShadowMap);
         Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
@@ -104,6 +107,7 @@ class World
         //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
         
         DrawCubes(Raylib.BLACK);
+        DrawModels();
 
         Raylib.EndMode3D();
         Raylib.EndTextureMode();
@@ -128,6 +132,7 @@ class World
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
 
         DrawCubes(Raylib.BLUE);
+        DrawModels();
 
         Raylib.EndShaderMode();
         Raylib.EndMode3D();
@@ -188,6 +193,7 @@ class World
     }
 
     public List<BoundingBox> mObstacles = new .() ~ delete _;
+    private List<Model3D> mModels = new .();
 
     private void CreateObstacles()
     {
@@ -214,5 +220,24 @@ class World
             position.z + size.z/2
         );
         mObstacles.Add(.(min, max));
+    }
+
+    private void LoadModels()
+    {
+        // Example: Load a GLTF model
+        // Note: Adjust the path to your model files
+        let model = new Model3D("assets/models/charybdis.gltf");
+        model.Position = .(2, 0.5f, 0);
+        model.Scale = .(1f, 1f, 1f);
+        mModels.Add(model);
+    }
+
+    public void DrawModels()
+    {
+        // Draw models
+        for (let model in mModels)
+        {
+            model.Draw();
+        }
     }
 }
