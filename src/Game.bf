@@ -4,13 +4,11 @@ using RaylibBeef;
 class Game 
 {
     private bool mIsRunning;
-    private Player mPlayer;
+    public Player mPlayer;
     public World mWorld;
 
     public this() {
         mIsRunning = true;
-        mPlayer = new Player(.(1.0f, 1.0f, 0.0f)); // Position player slightly above the floor
-        mWorld = new World();
     }
 
     public ~this() {
@@ -20,6 +18,8 @@ class Game
 
     public void Start() {
         // Initialize game resources
+        mPlayer = new Player(.(1.0f, 1.0f, 0.0f)); // Position player slightly above the floor
+        mWorld = new World();
         mWorld.LoadLevel("");
     }
 

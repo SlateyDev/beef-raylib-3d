@@ -57,10 +57,10 @@ class World
 
         // Setup light camera and calculate light space matrix
         mLightCamera = .(
-            Raymath.Vector3Scale(lightDir, -15.0f),  // Light position
-            Raymath.Vector3Zero(),     // Looking at center
+            Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position),  // Light position
+            Program.game.mPlayer.Position,     // Looking at center
             .(0.0f, 1.0f, 0.0f),     // Up vector
-            60.0f,                    // FOV
+            40.0f,                    // FOV
             CameraProjection.CAMERA_ORTHOGRAPHIC       // Projection type
         );
     }
@@ -84,6 +84,9 @@ class World
     Matrix lightProj;
 
     public void Render(Camera3D playerCamera) {
+        mLightCamera.position = Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position);
+        mLightCamera.target = Program.game.mPlayer.Position;
+
         Vector3 cameraPos = playerCamera.position;
         Raylib.SetShaderValue(mShadowShader, ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW], &cameraPos, ShaderUniformDataType.SHADER_UNIFORM_VEC3);
 
