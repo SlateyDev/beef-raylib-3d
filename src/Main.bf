@@ -18,11 +18,12 @@ class Program
 
     private static void EmscriptenMainLoop()
     {
-    	Update();
+        var frameTime = Raylib.GetFrameTime();
+	    Update(frameTime);
     }
 #endif
 
-    static Game game;
+    public static Game game;
 
     public static int Main() {
         Raylib.SetTraceLogLevel(.LOG_ALL);

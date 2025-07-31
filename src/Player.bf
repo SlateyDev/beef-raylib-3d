@@ -1,68 +1,146 @@
 using System;
+using System.Collections;
 using RaylibBeef;
 
 class Player
 {
     public Vector3 Position;
-    public float RotationAngle;
+    public float RotationAngle; // Yaw (horizontal rotation)
+    public float PitchAngle; // Vertical rotation
     public float MoveSpeed = 20f;
     public float RotateSpeed = 200f;
+    public float MouseSensitivity = 0.2f;
+
+    public const float PLAYER_RADIUS = 0.5f; // Collision radius for the player
+
+    private bool mMouseLocked = false;
+    private Vector2 mLastMousePos;
 
     public Camera3D camera;
 
     public this(Vector3 startPosition) {
         Position = startPosition;
         RotationAngle = 0.0f;
+        PitchAngle = 0.0f;
+        mLastMousePos = Raylib.GetMousePosition();
     }
 
-    public void Update(float frameTime) {
+    // Update method signature
+    public void Update(float frameTime)
+    {
+        HandleMouseInput();
+        HandleMovement(frameTime, Program.game.mWorld.mObstacles);
+        UpdateCamera();
+    }
+
+    private void HandleMouseInput() {
+        // Toggle mouse lock with Escape key
+        if (Raylib.IsMouseButtonPressed(.MOUSE_BUTTON_RIGHT)) {
+            mMouseLocked = true;
+            Vector2 screenCenter = .(
+                Raylib.GetScreenWidth() / 2.0f,
+                Raylib.GetScreenHeight() / 2.0f
+            );
+            Raylib.SetMousePosition((int32)screenCenter.x, (int32)screenCenter.y);
+            mLastMousePos = Raylib.GetMousePosition();
+            Raylib.DisableCursor();
+        } else if (Raylib.IsMouseButtonReleased(.MOUSE_BUTTON_RIGHT)) {
+            mMouseLocked = false;
+            Raylib.EnableCursor();
+        }
+
+        if (mMouseLocked) {
+            Vector2 mousePos = Raylib.GetMousePosition();
+            Vector2 mouseDelta = MathUtils.Vector2Subtract(mousePos, mLastMousePos);
+
+            // Update rotation angles based on mouse movement
+            RotationAngle += mouseDelta.x * MouseSensitivity;
+            PitchAngle -= mouseDelta.y * MouseSensitivity;
+
+            // Clamp pitch to prevent camera flipping
+            PitchAngle = Math.Clamp(PitchAngle, -89.0f, 89.0f);
+
+            // Center mouse position
+            Vector2 screenCenter = .(
+                Raylib.GetScreenWidth() / 2.0f,
+                Raylib.GetScreenHeight() / 2.0f
+            );
+            Raylib.SetMousePosition((int32)screenCenter.x, (int32)screenCenter.y);
+            mLastMousePos = screenCenter;
+        } else {
+            mLastMousePos = Raylib.GetMousePosition();
+        }
+    }
+
+    private bool CheckCollision(Vector3 newPosition, List<BoundingBox> obstacles)
+    {
+        // Check collision with each obstacle
+        for (let obstacle in obstacles)
+        {
+            if (Raylib.CheckCollisionBoxSphere(obstacle, newPosition, PLAYER_RADIUS))
+                return true;
+        }
+        return false;
+    }
+
+    private void HandleMovement(float frameTime, List<BoundingBox> obstacles)
+    {
         // Calculate forward and right vectors based on rotation
-        float radians = MathUtils.DegreesToRadians(RotationAngle);
+        float yawRadians = MathUtils.DegreesToRadians(RotationAngle);
         Vector3 forward = .(
-            Math.Cos(radians),
+            Math.Cos(yawRadians),
             0,
-            Math.Sin(radians)
+            Math.Sin(yawRadians)
         );
         Vector3 right = .(
-            Math.Cos(radians + Math.PI_f/2),
+            Math.Cos(yawRadians + Math.PI_f/2),
             0,
-            Math.Sin(radians + Math.PI_f/2)
+            Math.Sin(yawRadians + Math.PI_f/2)
         );
 
         var moveSpeed = MoveSpeed * frameTime;
+        Vector3 newPosition = Position;
 
         // Handle movement relative to looking direction
         if (Raylib.IsKeyDown(.KEY_W)) {
-            Position.x += forward.x * moveSpeed;
-            Position.z += forward.z * moveSpeed;
+            newPosition.x += forward.x * moveSpeed;
+            newPosition.z += forward.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_S)) {
-            Position.x -= forward.x * moveSpeed;
-            Position.z -= forward.z * moveSpeed;
+            newPosition.x -= forward.x * moveSpeed;
+            newPosition.z -= forward.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_A)) {
-            Position.x -= right.x * moveSpeed;
-            Position.z -= right.z * moveSpeed;
+            newPosition.x -= right.x * moveSpeed;
+            newPosition.z -= right.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_D)) {
-            Position.x += right.x * moveSpeed;
-            Position.z += right.z * moveSpeed;
+            newPosition.x += right.x * moveSpeed;
+            newPosition.z += right.z * moveSpeed;
         }
 
-        // Handle rotation
-        if (Raylib.IsKeyDown(.KEY_LEFT))
-            RotationAngle -= RotateSpeed * frameTime;
-        if (Raylib.IsKeyDown(.KEY_RIGHT))
-            RotationAngle += RotateSpeed * frameTime;
+        // Only update position if there's no collision
+        if (!CheckCollision(newPosition, obstacles))
+        {
+            Position = newPosition;
+        }
+    }
+
+    private void UpdateCamera() {
+        float yawRadians = MathUtils.DegreesToRadians(RotationAngle);
+        float pitchRadians = MathUtils.DegreesToRadians(PitchAngle);
+
+        // Calculate the target position using both yaw and pitch
+        Vector3 target = .(
+            Math.Cos(pitchRadians) * Math.Cos(yawRadians),
+            Math.Sin(pitchRadians),
+            Math.Cos(pitchRadians) * Math.Sin(yawRadians)
+        );
 
         // Update camera
         camera = .(
             Position,
-            .(
-                Position.x + forward.x,
-                Position.y,
-                Position.z + forward.z
-            ),
+            Raymath.Vector3Add(Position, target),
             .(0.0f, 1.0f, 0.0f),
             70.0f,
             CameraProjection.CAMERA_PERSPECTIVE

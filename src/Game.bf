@@ -5,11 +5,11 @@ class Game
 {
     private bool mIsRunning;
     private Player mPlayer;
-    private World mWorld;
+    public World mWorld;
 
     public this() {
         mIsRunning = true;
-        mPlayer = new Player(.(0.0f, 1.0f, 0.0f)); // Position player slightly above the floor
+        mPlayer = new Player(.(1.0f, 1.0f, 0.0f)); // Position player slightly above the floor
         mWorld = new World();
     }
 

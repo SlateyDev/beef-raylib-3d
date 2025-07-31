@@ -26,6 +26,7 @@ class World
 
     public this()
     {
+        CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
 #if BF_PLATFORM_WASM
@@ -185,4 +186,33 @@ class World
             Rlgl.rlUnloadFramebuffer(target.id);
         }
     }
+
+    public List<BoundingBox> mObstacles = new .() ~ delete _;
+
+    private void CreateObstacles()
+    {
+        // Add obstacles for cubes
+        for (int i = -5; i <= 5; i++) {
+            for (int j = -5; j <= 5; j++) {
+                if ((i + j) % 2 == 0) {
+                    AddObstacle(.(i * 4.0f, 1.0f, j * 4.0f), .(1.0f, 2.0f, 1.0f));
+                }
+            }
+        }
     }
+
+    private void AddObstacle(Vector3 position, Vector3 size)
+    {
+        Vector3 min = .(
+            position.x - size.x/2,
+            position.y,
+            position.z - size.z/2
+        );
+        Vector3 max = .(
+            position.x + size.x/2,
+            position.y + size.y,
+            position.z + size.z/2
+        );
+        mObstacles.Add(.(min, max));
+    }
+}
