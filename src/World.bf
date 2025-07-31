@@ -2,8 +2,7 @@ using System;
 using System.Collections;
 using RaylibBeef;
 
-class World
-{
+class World {
     private List<uint8> mLevelData = new .() ~ delete(mLevelData);
     private int mWidth = 100;
     private int mHeight = 100;
@@ -24,8 +23,7 @@ class World
     const int32 SHADOWMAP_RESOLUTION = 2048;
 
 
-    public this()
-    {
+    public this() {
         // Load models
         LoadModels();
         CreateObstacles();
@@ -159,8 +157,7 @@ class World
         target.texture.width = width;
         target.texture.height = height;
     
-        if (target.id > 0)
-        {
+        if (target.id > 0) {
             Rlgl.rlEnableFramebuffer(target.id);
     
             // Create depth texture
@@ -185,10 +182,8 @@ class World
     }
     
     // Unload shadowmap render texture from GPU memory (VRAM)
-    void UnloadShadowmapRenderTexture(RenderTexture2D target)
-    {
-        if (target.id > 0)
-        {
+    void UnloadShadowmapRenderTexture(RenderTexture2D target) {
+        if (target.id > 0) {
             // NOTE: Depth texture/renderbuffer is automatically
             // queried and deleted before deleting framebuffer
             Rlgl.rlUnloadFramebuffer(target.id);
@@ -198,8 +193,7 @@ class World
     public List<BoundingBox> mObstacles = new .() ~ delete _;
     private List<Model3D> mModels = new .();
 
-    private void CreateObstacles()
-    {
+    private void CreateObstacles() {
         // Add obstacles for cubes
         for (int i = -5; i <= 5; i++) {
             for (int j = -5; j <= 5; j++) {
@@ -210,8 +204,7 @@ class World
         }
     }
 
-    private void AddObstacle(Vector3 position, Vector3 size)
-    {
+    private void AddObstacle(Vector3 position, Vector3 size) {
         Vector3 min = .(
             position.x - size.x/2,
             position.y,
@@ -225,8 +218,7 @@ class World
         mObstacles.Add(.(min, max));
     }
 
-    private void LoadModels()
-    {
+    private void LoadModels() {
         // Example: Load a GLTF model
         // Note: Adjust the path to your model files
         let model = new Model3D("assets/models/charybdis.gltf");
@@ -235,11 +227,9 @@ class World
         mModels.Add(model);
     }
 
-    public void DrawModels()
-    {
+    public void DrawModels() {
         // Draw models
-        for (let model in mModels)
-        {
+        for (let model in mModels) {
             model.Draw();
         }
     }

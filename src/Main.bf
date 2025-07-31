@@ -2,8 +2,7 @@ using System;
 using System.Diagnostics;
 using RaylibBeef;
 
-class Program
-{
+class Program {
 #if BF_PLATFORM_WASM
     private function void em_callback_func();
 
@@ -16,8 +15,7 @@ class Program
     [CLink, CallingConvention(.Stdcall)]
     private static extern double emscripten_get_now();
 
-    private static void EmscriptenMainLoop()
-    {
+    private static void EmscriptenMainLoop() {
         var frameTime = Raylib.GetFrameTime();
 	    Update(frameTime);
     }
@@ -43,8 +41,7 @@ class Program
 #if BF_PLATFORM_WASM
         emscripten_set_main_loop(=> EmscriptenMainLoop, 0, 1);
 #else
-        while (!Raylib.WindowShouldClose())
-        {
+        while (!Raylib.WindowShouldClose()) {
             var frameTime = Raylib.GetFrameTime();
         	Update(frameTime);
         }

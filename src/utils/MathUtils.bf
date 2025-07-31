@@ -1,8 +1,7 @@
 using System;
 using RaylibBeef;
 
-static class MathUtils
-{
+static class MathUtils {
     public static Vector2 Vector2Add(Vector2 v1, Vector2 v2) {
         return .(v1.x + v2.x, v1.y + v2.y);
     }

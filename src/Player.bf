@@ -25,8 +25,7 @@ class Player
     }
 
     // Update method signature
-    public void Update(float frameTime)
-    {
+    public void Update(float frameTime) {
         HandleMouseInput();
         HandleMovement(frameTime, Program.game.mWorld.mObstacles);
         UpdateCamera();
@@ -54,26 +53,22 @@ class Player
             mMouseLocked = true;
             mFirstMouse = true;
             Raylib.DisableCursor();
-            Raylib.GetMouseDelta();
         } else if (Raylib.IsMouseButtonReleased(.MOUSE_BUTTON_RIGHT)) {
             mMouseLocked = false;
             Raylib.EnableCursor();
         }
     }
 
-    private bool CheckCollision(Vector3 newPosition, List<BoundingBox> obstacles)
-    {
+    private bool CheckCollision(Vector3 newPosition, List<BoundingBox> obstacles) {
         // Check collision with each obstacle
-        for (let obstacle in obstacles)
-        {
+        for (let obstacle in obstacles) {
             if (Raylib.CheckCollisionBoxSphere(obstacle, newPosition, PLAYER_RADIUS))
                 return true;
         }
         return false;
     }
 
-    private void HandleMovement(float frameTime, List<BoundingBox> obstacles)
-    {
+    private void HandleMovement(float frameTime, List<BoundingBox> obstacles) {
         // Calculate forward and right vectors based on rotation
         float yawRadians = MathUtils.DegreesToRadians(RotationAngle);
         Vector3 forward = .(
@@ -109,8 +104,7 @@ class Player
         }
 
         // Only update position if there's no collision
-        if (!CheckCollision(newPosition, obstacles))
-        {
+        if (!CheckCollision(newPosition, obstacles)) {
             Position = newPosition;
         }
     }

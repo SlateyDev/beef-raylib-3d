@@ -1,8 +1,7 @@
 using System;
 using RaylibBeef;
 
-class Game 
-{
+class Game {
     private bool mIsRunning;
     public Player mPlayer;
     public World mWorld;
