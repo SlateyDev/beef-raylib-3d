@@ -31,7 +31,7 @@ class Program {
 
         Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
         Raylib.InitWindow(1366, 768, "Beef FPS");
-        Raylib.SetTargetFPS(60);
+        //Raylib.SetTargetFPS(60);
 
         game = new Game();
         defer delete game;
