@@ -5,7 +5,8 @@ class Player
 {
     public Vector3 Position;
     public float RotationAngle;
-    public float MoveSpeed = 0.2f;
+    public float MoveSpeed = 20f;
+    public float RotateSpeed = 200f;
 
     public Camera3D camera;
 
@@ -14,7 +15,7 @@ class Player
         RotationAngle = 0.0f;
     }
 
-    public void Update() {
+    public void Update(float frameTime) {
         // Calculate forward and right vectors based on rotation
         float radians = MathUtils.DegreesToRadians(RotationAngle);
         Vector3 forward = .(
@@ -28,29 +29,31 @@ class Player
             Math.Sin(radians + Math.PI_f/2)
         );
 
+        var moveSpeed = MoveSpeed * frameTime;
+
         // Handle movement relative to looking direction
         if (Raylib.IsKeyDown(.KEY_W)) {
-            Position.x += forward.x * MoveSpeed;
-            Position.z += forward.z * MoveSpeed;
+            Position.x += forward.x * moveSpeed;
+            Position.z += forward.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_S)) {
-            Position.x -= forward.x * MoveSpeed;
-            Position.z -= forward.z * MoveSpeed;
+            Position.x -= forward.x * moveSpeed;
+            Position.z -= forward.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_A)) {
-            Position.x -= right.x * MoveSpeed;
-            Position.z -= right.z * MoveSpeed;
+            Position.x -= right.x * moveSpeed;
+            Position.z -= right.z * moveSpeed;
         }
         if (Raylib.IsKeyDown(.KEY_D)) {
-            Position.x += right.x * MoveSpeed;
-            Position.z += right.z * MoveSpeed;
+            Position.x += right.x * moveSpeed;
+            Position.z += right.z * moveSpeed;
         }
 
         // Handle rotation
         if (Raylib.IsKeyDown(.KEY_LEFT))
-            RotationAngle -= 2.0f;
+            RotationAngle -= RotateSpeed * frameTime;
         if (Raylib.IsKeyDown(.KEY_RIGHT))
-            RotationAngle += 2.0f;
+            RotationAngle += RotateSpeed * frameTime;
 
         // Update camera
         camera = .(

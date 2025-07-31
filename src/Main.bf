@@ -31,7 +31,7 @@ class Program
         });
 
         Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
-        Raylib.InitWindow(800, 600, "Beef FPS");
+        Raylib.InitWindow(1366, 768, "Beef FPS");
         Raylib.SetTargetFPS(60);
 
         game = new Game();
@@ -44,12 +44,10 @@ class Program
 #else
         while (!Raylib.WindowShouldClose())
         {
-        	Update();
+            var frameTime = Raylib.GetFrameTime();
+        	Update(frameTime);
         }
 #endif
-
-        while (!Raylib.WindowShouldClose()) {
-        }
 
         game.Stop();
 
@@ -57,8 +55,8 @@ class Program
         return 0;
     }
 
-    private static void Update() {
-        game.Update();
+    private static void Update(float frameTime) {
+        game.Update(frameTime);
         game.Render();
     }
 }

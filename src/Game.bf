@@ -23,10 +23,10 @@ class Game
         mWorld.LoadLevel("");
     }
 
-    public void Update() {
+    public void Update(float frameTime) {
         if (mIsRunning) {
-            mPlayer.Update();
-            mWorld.Update();
+            mPlayer.Update(frameTime);
+            mWorld.Update(frameTime);
             // Check for game state changes
         }
     }

@@ -72,7 +72,7 @@ class World
         // For now we'll just create a simple floor
     }
 
-    public void Update() {
+    public void Update(float frameTime) {
         // Update world state
     }
 
