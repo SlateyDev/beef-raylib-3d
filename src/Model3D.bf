@@ -32,13 +32,13 @@ class Model3D {
         matTransform = Raymath.MatrixMultiply(mModel.transform, matTransform);
 
         for (int i = 0; i < mModel.meshCount; i++) {
-            Color color = mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color;
+            //Color color = mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color;
 
-            Color colorTint = color;// Raylib.GREEN;
+            //Color colorTint = color;// Raylib.GREEN;
 
-            mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color = colorTint;
+            //mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color = colorTint;
             Raylib.DrawMesh(mModel.meshes[i], mModel.materials[((int32*)mModel.meshMaterial)[i]], matTransform);
-            mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color = color;
+            //mModel.materials[((int32*)mModel.meshMaterial)[i]].maps[MaterialMapIndex.MATERIAL_MAP_ALBEDO].color = color;
         }
     }
 }

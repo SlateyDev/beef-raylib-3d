@@ -24,7 +24,6 @@ class World {
 
 
     public this() {
-        // Load models
         LoadModels();
         CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
@@ -40,6 +39,7 @@ class World {
         // Initialize shadow mapping resources
         mShadowMap = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
+        UpdateModelShaders();
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
         lightDirLoc = Raylib.GetShaderLocation(mShadowShader, "lightDir");
         int32 lightColLoc = Raylib.GetShaderLocation(mShadowShader, "lightColor");
@@ -225,6 +225,14 @@ class World {
         model.Position = .(2, 0.5f, 0);
         model.Scale = .(1f, 1f, 1f);
         mModels.Add(model);
+    }
+
+    private void UpdateModelShaders() {
+        for (let model in mModels) {
+            for (int i = 0; i < model.mModel.materialCount; i++) {
+                model.mModel.materials[i].shader = mShadowShader;
+            }
+        }
     }
 
     public void DrawModels() {
