@@ -126,31 +126,32 @@ class World {
         RenderSceneWithShadows(playerCamera);
     }
 
-    /*private void CustomBeginMode3D() {
-        rlDrawRenderBatchActive();
+    private void CustomBeginMode3D(Matrix proj, Matrix view) {
+        Rlgl.rlDrawRenderBatchActive();
 
-        rlMatrixMode(RL_PROJECTION);
-        rlPushMatrix();
-        rlLoadIdentity();
+        Rlgl.rlMatrixMode(Rlgl.RL_PROJECTION);
+        Rlgl.rlPushMatrix();
+        Rlgl.rlLoadIdentity();
 
-        rlMultMatrixf(MatrixToFloat(camera.projection));
+        Rlgl.rlMultMatrixf(&Raymath.MatrixToFloatV(proj).v[0]);
 
-        rlMatrixMode(RL_MODELVIEW);
-        rlLoadIdentity();
+        Rlgl.rlMatrixMode(Rlgl.RL_MODELVIEW);
+        Rlgl.rlLoadIdentity();
 
-        rlMultMatrixf(MatrixToFloat(camera.view));
+        Rlgl.rlMultMatrixf(&Raymath.MatrixToFloatV(view).v[0]);
 
-        rlEnableDepthTest();
-    }*/
+        Rlgl.rlEnableDepthTest();
+    }
 
     private void RenderSceneForShadow(Camera3D playerCamera) {
         UpdateCascades(playerCamera);
 
         Raylib.BeginTextureMode(mShadowMap);
         Raylib.ClearBackground(Raylib.WHITE);
-        Raylib.BeginMode3D(mLightCamera);
-        lightView = Rlgl.rlGetMatrixModelview();
-        lightProj = Rlgl.rlGetMatrixProjection();
+        CustomBeginMode3D(lightProjs[0], lightViews[0]);
+        //Raylib.BeginMode3D(mLightCamera);
+        lightView = lightViews[0]; // Rlgl.rlGetMatrixModelview();
+        lightProj = lightProjs[0]; // Rlgl.rlGetMatrixProjection();
 
         // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
