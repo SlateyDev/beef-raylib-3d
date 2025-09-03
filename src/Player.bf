@@ -7,7 +7,7 @@ class Player
     public Vector3 Position;
     public float RotationAngle; // Yaw (horizontal rotation)
     public float PitchAngle; // Vertical rotation
-    public float MoveSpeed = 20f;
+    public float MoveSpeed = 5f;
     public float RotateSpeed = 200f;
     public float MouseSensitivity = 0.2f;
 

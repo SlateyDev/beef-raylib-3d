@@ -25,11 +25,11 @@ class Program {
 
     public static int Main() {
         Raylib.SetTraceLogLevel(.LOG_ALL);
-        Raylib.SetTraceLogCallback((logType, text, args) => {
-            Debug.WriteLine(StringView(text), args);
-        });
+        //Raylib.SetTraceLogCallback((logType, text, args) => {
+        //    Debug.WriteLine(StringView(text), args);
+        //});
 
-        Raylib.SetConfigFlags(ConfigFlags.FLAG_MSAA_4X_HINT);
+        //Raylib.SetConfigFlags(.FLAG_MSAA_4X_HINT);
         Raylib.InitWindow(1366, 768, "Beef FPS");
         //Raylib.SetTargetFPS(60);
 

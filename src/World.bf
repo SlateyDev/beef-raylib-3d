@@ -21,11 +21,15 @@ class World {
     private int32 lightDirLoc = 0;
 
     const int32 SHADOWMAP_RESOLUTION = 2048;
-
+    const int32 NUM_CASCADES = 3;
+    private RenderTexture2D[NUM_CASCADES] shadowMaps;
+    private Matrix[NUM_CASCADES] lightViews;
+    private Matrix[NUM_CASCADES] lightProjs;
+    private float[NUM_CASCADES+1] cascadeSplits = .(0.0f, 0.1f, 0.3f, 1.0f);
 
     public this() {
         LoadModels();
-        CreateObstacles();
+        //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
 #if BF_PLATFORM_WASM
@@ -38,6 +42,11 @@ class World {
         
         // Initialize shadow mapping resources
         mShadowMap = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
+
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            shadowMaps[cascade_index] = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
+        }
+
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
         UpdateModelShaders();
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
@@ -58,7 +67,7 @@ class World {
             Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position),  // Light position
             Program.game.mPlayer.Position,     // Looking at center
             .(0.0f, 1.0f, 0.0f),     // Up vector
-            40.0f,                    // FOV
+            5.0f,                    // FOV
             CameraProjection.CAMERA_ORTHOGRAPHIC       // Projection type
         );
     }
@@ -66,6 +75,9 @@ class World {
     public ~this() {
         DeleteContainerAndItems!(mModels);
         UnloadShadowmapRenderTexture(mShadowMap);
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            UnloadShadowmapRenderTexture(shadowMaps[cascade_index]);
+        }
         Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
     }
@@ -76,6 +88,23 @@ class World {
 
     public void Update(float frameTime) {
         // Update world state
+    }
+
+    // Update cascade light matrices
+    void UpdateCascades(Camera3D camera) {
+        for (int i = 0; i < NUM_CASCADES; i++) {
+            float nearSplit = Raymath.Lerp((float)Rlgl.RL_CULL_DISTANCE_NEAR, (float)Rlgl.RL_CULL_DISTANCE_FAR, cascadeSplits[i]);
+            float farSplit  = Raymath.Lerp((float)Rlgl.RL_CULL_DISTANCE_NEAR, (float)Rlgl.RL_CULL_DISTANCE_FAR, cascadeSplits[i+1]);
+
+            // Here we just use a fixed-size ortho box for simplicity
+            Vector3 center = Raymath.Vector3Add(camera.position,
+                Raymath.Vector3Scale(Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)),
+                (nearSplit + farSplit) * 0.5f));
+
+            Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
+            lightViews[i] = Raymath.MatrixLookAt(lightPos, center, Vector3(0,1,0));
+            lightProjs[i] = Raymath.MatrixOrtho(-20, 20, -20, 20, 1.0f, 50.0f);
+        }
     }
 
     Matrix lightView;
@@ -90,14 +119,33 @@ class World {
 
         // First pass: render to shadow map
         // Draw scene from light's perspective
-        RenderSceneForShadow();
+        RenderSceneForShadow(playerCamera);
 
         // Second pass: render scene with shadows
         // Render the scene from player perspective
         RenderSceneWithShadows(playerCamera);
     }
 
-    private void RenderSceneForShadow() {
+    /*private void CustomBeginMode3D() {
+        rlDrawRenderBatchActive();
+
+        rlMatrixMode(RL_PROJECTION);
+        rlPushMatrix();
+        rlLoadIdentity();
+
+        rlMultMatrixf(MatrixToFloat(camera.projection));
+
+        rlMatrixMode(RL_MODELVIEW);
+        rlLoadIdentity();
+
+        rlMultMatrixf(MatrixToFloat(camera.view));
+
+        rlEnableDepthTest();
+    }*/
+
+    private void RenderSceneForShadow(Camera3D playerCamera) {
+        UpdateCascades(playerCamera);
+
         Raylib.BeginTextureMode(mShadowMap);
         Raylib.ClearBackground(Raylib.WHITE);
         Raylib.BeginMode3D(mLightCamera);
@@ -105,7 +153,7 @@ class World {
         lightProj = Rlgl.rlGetMatrixProjection();
 
         // Draw floor
-        //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
+        Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
         
         DrawCubes(Raylib.BLACK);
         DrawModels();
@@ -125,9 +173,9 @@ class World {
         Rlgl.rlActiveTextureSlot(slot);
         Rlgl.rlEnableTexture(mShadowMap.depth.id);
         Rlgl.rlSetUniform(shadowMapLoc, &slot, ShaderUniformDataType.SHADER_UNIFORM_INT, 1);
-        Raylib.BeginShaderMode(mShadowShader);
 
         Raylib.BeginMode3D(playerCamera);
+        Raylib.BeginShaderMode(mShadowShader);
 
         // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
@@ -172,7 +220,7 @@ class World {
             Rlgl.rlFramebufferAttach(target.id, target.depth.id, rlFramebufferAttachType.RL_ATTACHMENT_DEPTH, rlFramebufferAttachTextureType.RL_ATTACHMENT_TEXTURE2D, 0);
     
             // Check if fbo is complete with attachments (valid)
-            //if (Rlgl.rlFramebufferComplete(target.id)) Raylib.TraceLog(TraceLogLevel.LOG_INFO, "FBO: [ID %i] Framebuffer object created successfully", target.id);
+            if (Rlgl.rlFramebufferComplete(target.id)) Console.WriteLine("FBO: [ID {}] Framebuffer object created successfully", target.id);
     
             Rlgl.rlDisableFramebuffer();
         }
@@ -222,6 +270,7 @@ class World {
         // Example: Load a GLTF model
         // Note: Adjust the path to your model files
         let model = new Model3D("assets/models/charybdis.gltf");
+        //let model = new Model3D("assets/models/Untitled.gltf");
         model.Position = .(2, 0.5f, 0);
         model.Scale = .(1f, 1f, 1f);
         mModels.Add(model);
