@@ -97,7 +97,8 @@ class World {
 
             // Here we just use a fixed-size ortho box for simplicity
             Vector3 center = Raymath.Vector3Add(camera.position,
-                Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)));
+                Raymath.Vector3Scale(Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)),
+                (nearSplit + farSplit) * 0.5f));
 
             Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
             lightViews[i] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
