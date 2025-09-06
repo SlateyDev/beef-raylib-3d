@@ -20,11 +20,13 @@ class World {
     private int32 lightDirLoc = 0;
 
     const int32 SHADOWMAP_RESOLUTION = 2048;
-    const int32 NUM_CASCADES = 1;
+    const int32 NUM_CASCADES = 3;
     private RenderTexture2D[NUM_CASCADES] shadowMaps;
     private Matrix[NUM_CASCADES] lightViews;
     private Matrix[NUM_CASCADES] lightProjs;
-    private float[NUM_CASCADES+1] cascadeSplits = .(0.0f, 1.0f);
+    private float[NUM_CASCADES+1] cascadeSplits = .(0.0f, 0.002f, 0.3f, 1.0f);
+    public const double CULL_DISTANCE_NEAR = 0.05;
+    public const double CULL_DISTANCE_FAR = 1000;
 
     public this() {
         LoadModels();
@@ -86,9 +88,6 @@ class World {
         // Update world state
     }
 
-    public const double CULL_DISTANCE_NEAR = 0.05;
-    public const double CULL_DISTANCE_FAR = 4000;
-
     // Update cascade light matrices
     void UpdateCascades(Camera3D camera) {
         for (int i = 0; i < NUM_CASCADES; i++) {
@@ -102,7 +101,25 @@ class World {
 
             Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
             lightViews[i] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
-            lightProjs[i] = Raymath.MatrixOrtho(-20, 20, -20, 20, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+            lightProjs[i] = Raymath.MatrixOrtho(-10, 10, -10, 10, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+        }
+    }
+
+    void DrawCascadeCenters(Camera3D camera) {
+        for (int i = 0; i < NUM_CASCADES; i++) {
+            float nearSplit = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i]);
+            float farSplit  = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i+1]);
+
+            // Here we just use a fixed-size ortho box for simplicity
+            Vector3 center = Raymath.Vector3Add(camera.position,
+                Raymath.Vector3Scale(Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)),
+                (nearSplit + farSplit) * 0.5f));
+
+            Raylib.DrawSphere(center, 0.1f, Raylib.YELLOW);
+
+            //Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
+            //lightViews[i] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
+            //lightProjs[i] = Raymath.MatrixOrtho(-20, 20, -20, 20, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
         }
     }
 
@@ -181,6 +198,7 @@ class World {
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
 
         DrawCubes(Raylib.BLUE);
+        DrawCascadeCenters(playerCamera);
         DrawModels();
 
         Raylib.EndShaderMode();
