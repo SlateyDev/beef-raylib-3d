@@ -15,18 +15,19 @@ class World {
     private Color lightColor = Raylib.WHITE;
     private Vector4 lightColorNormalized = Raylib.ColorNormalize(lightColor);
 
-    private int32 lightVPLoc = 0;
     private int32 shadowMapLoc = 0;
     private int32 lightDirLoc = 0;
 
     const int32 SHADOWMAP_RESOLUTION = 2048;
     const int32 NUM_CASCADES = 3;
+    public const float CULL_DISTANCE_NEAR = 0.05f;
+    public const float CULL_DISTANCE_FAR = 1000;
+
     private RenderTexture2D[NUM_CASCADES] shadowMaps;
     private Matrix[NUM_CASCADES] lightViews;
     private Matrix[NUM_CASCADES] lightProjs;
-    private float[NUM_CASCADES+1] cascadeSplits = .(0.0f, 0.002f, 0.3f, 1.0f);
-    public const double CULL_DISTANCE_NEAR = 0.05;
-    public const double CULL_DISTANCE_FAR = 1000;
+    private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR);
+    private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
 
     public this() {
         LoadModels();
@@ -56,10 +57,14 @@ class World {
         int32 ambientLoc = Raylib.GetShaderLocation(mShadowShader, "ambient");
         float[4] ambient = .(0.4f, 0.4f, 0.4f, 1.0f);
         Raylib.SetShaderValue(mShadowShader, ambientLoc, &ambient, ShaderUniformDataType.SHADER_UNIFORM_VEC4);
-        lightVPLoc = Raylib.GetShaderLocation(mShadowShader, "lightVP");
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            lightVPLocs[cascade_index] = Raylib.GetShaderLocation(mShadowShader, scope $"lightVP[{cascade_index}]");
+        }
         shadowMapLoc = Raylib.GetShaderLocation(mShadowShader, "shadowMap");
         int32 shadowMapResolution = SHADOWMAP_RESOLUTION;
         Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "shadowMapResolution"), &shadowMapResolution, ShaderUniformDataType.SHADER_UNIFORM_INT);
+        int32 locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
+        Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
 
         // Setup light camera and calculate light space matrix
         mLightCamera = .(
@@ -80,6 +85,22 @@ class World {
         Raylib.UnloadShader(mShadowShader);
     }
 
+    /*private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
+        outSplits[0] = 0.0f;
+        outSplits[numCascades] = 1.0f;
+
+        float range = farPlane - nearPlane;
+        float ratio = farPlane / nearPlane;
+
+        for (int i = 1; i < numCascades; i++) {
+            float p = (float)i / (float)numCascades;
+            float log = nearPlane * System.Math.Pow(ratio, p);
+            float uniform = nearPlane + range * p;
+            float d = lambda * (log - uniform) + uniform;
+            outSplits[i] = (d - nearPlane) / range;
+        }
+    }*/
+
     public void LoadLevel(StringView filePath) {
         // For now we'll just create a simple floor
     }
@@ -90,9 +111,9 @@ class World {
 
     // Update cascade light matrices
     void UpdateCascades(Camera3D camera) {
-        for (int i = 0; i < NUM_CASCADES; i++) {
-            float nearSplit = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i]);
-            float farSplit  = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i+1]);
+        for (int cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            float nearSplit = cascadeSplits[cascade_index];
+            float farSplit  = cascadeSplits[cascade_index + 1];
 
             // Here we just use a fixed-size ortho box for simplicity
             Vector3 center = Raymath.Vector3Add(camera.position,
@@ -100,26 +121,10 @@ class World {
                 (nearSplit + farSplit) * 0.5f));
 
             Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
-            lightViews[i] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
-            lightProjs[i] = Raymath.MatrixOrtho(-10, 10, -10, 10, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
-        }
-    }
+            lightViews[cascade_index] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
 
-    void DrawCascadeCenters(Camera3D camera) {
-        for (int i = 0; i < NUM_CASCADES; i++) {
-            float nearSplit = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i]);
-            float farSplit  = Raymath.Lerp((float)CULL_DISTANCE_NEAR, (float)CULL_DISTANCE_FAR, cascadeSplits[i+1]);
-
-            // Here we just use a fixed-size ortho box for simplicity
-            Vector3 center = Raymath.Vector3Add(camera.position,
-                Raymath.Vector3Scale(Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)),
-                (nearSplit + farSplit) * 0.5f));
-
-            Raylib.DrawSphere(center, 0.1f, Raylib.YELLOW);
-
-            //Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
-            //lightViews[i] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
-            //lightProjs[i] = Raymath.MatrixOrtho(-20, 20, -20, 20, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+            var ortho_size = (cascade_index * 5 + 1) * 4;
+            lightProjs[cascade_index] = Raymath.MatrixOrtho(-ortho_size, ortho_size, -ortho_size, ortho_size, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
         }
     }
 
@@ -162,34 +167,41 @@ class World {
     private void RenderSceneForShadow(Camera3D playerCamera) {
         UpdateCascades(playerCamera);
 
-        Raylib.BeginTextureMode(shadowMaps[0]);
-        Raylib.ClearBackground(Raylib.WHITE);
-        lightView = lightViews[0]; // Raymath.MatrixLookAt(mLightCamera.position, mLightCamera.target, mLightCamera.up); // Rlgl.rlGetMatrixModelview();
-        lightProj = lightProjs[0]; // Raymath.MatrixOrtho(-mLightCamera.fovy/2.0, mLightCamera.fovy/2.0, -mLightCamera.fovy/2.0, mLightCamera.fovy/2.0, 0.05f, 4000); // Rlgl.rlGetMatrixProjection();
-        CustomBeginMode3D(lightProj, lightView);
-        //Raylib.BeginMode3D(mLightCamera);
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            Raylib.BeginTextureMode(shadowMaps[cascade_index]);
+            Raylib.ClearBackground(Raylib.WHITE);
+            lightView = lightViews[cascade_index];
+            lightProj = lightProjs[cascade_index];
+            CustomBeginMode3D(lightProj, lightView);
 
-        // Draw floor
-        Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
-        
-        DrawCubes(Raylib.BLACK);
-        DrawModels();
+            // Draw floor
+            //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
 
-        Raylib.EndMode3D();
-        Raylib.EndTextureMode();
+            DrawCubes(Raylib.BLACK);
+            DrawModels();
+
+            Raylib.EndMode3D();
+            Raylib.EndTextureMode();
+        }
     }
 
     private void RenderSceneWithShadows(Camera3D playerCamera) {
         Raylib.ClearBackground(Raylib.BEIGE);
 
         // Calculate MVP matrix for the current camera
-        Matrix lightViewProj = Raymath.MatrixMultiply(lightView, lightProj);
-        Raylib.SetShaderValueMatrix(mShadowShader, lightVPLoc, lightViewProj);
+        Matrix[NUM_CASCADES] lightViewProj;
+        for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            lightViewProj[cascade_index] = Raymath.MatrixMultiply(lightViews[cascade_index], lightProjs[cascade_index]);
+            Raylib.SetShaderValueMatrix(mShadowShader, lightVPLocs[cascade_index], lightViewProj[cascade_index]);
+        }
 
-        int32 slot = 10; // Can be anything 0 to 15, but 0 will probably be taken up
-        Rlgl.rlActiveTextureSlot(slot);
-        Rlgl.rlEnableTexture(shadowMaps[0].depth.id);
-        Rlgl.rlSetUniform(shadowMapLoc, &slot, ShaderUniformDataType.SHADER_UNIFORM_INT, 1);
+        int32[NUM_CASCADES] slot;
+        for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            slot[cascade_index] = 10 + cascade_index; // Can be anything 0 to 15, but 0 will probably be taken up
+            Rlgl.rlActiveTextureSlot(slot[cascade_index]);
+            Rlgl.rlEnableTexture(shadowMaps[cascade_index].depth.id);
+        }
+        Rlgl.rlSetUniform(shadowMapLoc, &slot[0], ShaderUniformDataType.SHADER_UNIFORM_INT, 3);
 
         Raylib.BeginMode3D(playerCamera);
         Raylib.BeginShaderMode(mShadowShader);
@@ -197,8 +209,7 @@ class World {
         // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
 
-        DrawCubes(Raylib.BLUE);
-        DrawCascadeCenters(playerCamera);
+        DrawCubes(Raylib.WHITE);
         DrawModels();
 
         Raylib.EndShaderMode();
