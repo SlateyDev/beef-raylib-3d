@@ -30,6 +30,7 @@ class Program {
         //});
 
         //Raylib.SetConfigFlags(.FLAG_MSAA_4X_HINT);
+        Raylib.SetConfigFlags(.FLAG_WINDOW_RESIZABLE);
         Raylib.InitWindow(1366, 768, "Beef FPS");
         //Raylib.SetTargetFPS(60);
 

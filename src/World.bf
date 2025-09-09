@@ -17,6 +17,7 @@ class World {
 
     private int32 shadowMapLoc = 0;
     private int32 lightDirLoc = 0;
+    private int32 locSplits = 0;
 
     const int32 SHADOWMAP_RESOLUTION = 2048;
     const int32 NUM_CASCADES = 3;
@@ -63,7 +64,7 @@ class World {
         shadowMapLoc = Raylib.GetShaderLocation(mShadowShader, "shadowMap");
         int32 shadowMapResolution = SHADOWMAP_RESOLUTION;
         Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "shadowMapResolution"), &shadowMapResolution, ShaderUniformDataType.SHADER_UNIFORM_INT);
-        int32 locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
+        locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
         Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
 
         // Setup light camera and calculate light space matrix
@@ -85,28 +86,77 @@ class World {
         Raylib.UnloadShader(mShadowShader);
     }
 
-    /*private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
-        outSplits[0] = 0.0f;
-        outSplits[numCascades] = 1.0f;
-
-        float range = farPlane - nearPlane;
-        float ratio = farPlane / nearPlane;
-
-        for (int i = 1; i < numCascades; i++) {
-            float p = (float)i / (float)numCascades;
-            float log = nearPlane * System.Math.Pow(ratio, p);
-            float uniform = nearPlane + range * p;
-            float d = lambda * (log - uniform) + uniform;
-            outSplits[i] = (d - nearPlane) / range;
-        }
-    }*/
-
     public void LoadLevel(StringView filePath) {
         // For now we'll just create a simple floor
     }
 
     public void Update(float frameTime) {
         // Update world state
+    }
+
+    private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
+        outSplits[0] = nearPlane;
+        outSplits[numCascades] = farPlane;
+
+        float range = farPlane - nearPlane;
+        float ratio = farPlane / nearPlane;
+
+        for (int cascade_index = 1; cascade_index < numCascades; cascade_index++) {
+            float p = (float)cascade_index / (float)numCascades;
+            float log = nearPlane * System.Math.Pow(ratio, p);
+            float uniform = nearPlane + range * p;
+            float d = lambda * (log - uniform) + uniform;
+            outSplits[cascade_index] = d;
+        }
+    }
+
+    private void FrustumSliceCornersWS(Camera3D cam, float aspect, float nearZ, float farZ, ref Vector3[8] outCorners) {
+        Vector3 fwd = Raymath.Vector3Normalize(Raymath.Vector3Subtract(cam.target, cam.position));
+        Vector3 right = Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(fwd, cam.up));
+        Vector3 up = Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(right, fwd));
+
+        float tanHalfFovy = Math.Tan(cam.fovy * Raymath.DEG2RAD * 0.5f);
+
+        float nh = 2.0f * tanHalfFovy * nearZ;
+        float nw = nh * aspect;
+        float fh = 2.0f * tanHalfFovy * farZ;
+        float fw = fh * aspect;
+
+        Vector3 nc = Raymath.Vector3Add(cam.position, Raymath.Vector3Scale(fwd, nearZ));
+        Vector3 fc = Raymath.Vector3Add(cam.position, Raymath.Vector3Scale(fwd, farZ));
+
+        Vector3 upN = Raymath.Vector3Scale(up, nh * 0.5f);
+        Vector3 rtN = Raymath.Vector3Scale(right, nw * 0.5f);
+        Vector3 upF = Raymath.Vector3Scale(up, fh * 0.5f);
+        Vector3 rtF = Raymath.Vector3Scale(right, fw * 0.5f);
+
+        outCorners[0] = Raymath.Vector3Add(Raymath.Vector3Add(nc, upN),  rtN);
+        outCorners[1] = Raymath.Vector3Add(Raymath.Vector3Subtract(nc, rtN),  upN);
+        outCorners[2] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(nc, upN),  rtN);
+        outCorners[3] = Raymath.Vector3Subtract(Raymath.Vector3Add(nc, rtN),  upN);
+
+        outCorners[4] = Raymath.Vector3Add(Raymath.Vector3Add(fc, upF),  rtF);
+        outCorners[5] = Raymath.Vector3Add(Raymath.Vector3Subtract(fc, rtF),  upF);
+        outCorners[6] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(fc, upF),  rtF);
+        outCorners[7] = Raymath.Vector3Subtract(Raymath.Vector3Add(fc, rtF),  upF);
+    }
+
+    private void SnapOrthoToTexels(float* minX, float* maxX, float* minY, float* maxY, int mapSize) {
+        float width  = (*maxX - *minX);
+        float height = (*maxY - *minY);
+        float texelX = width  / (float)mapSize;
+        float texelY = height / (float)mapSize;
+
+        float cx = 0.5f*(*minX + *maxX);
+        float cy = 0.5f*(*minY + *maxY);
+
+        cx = Math.Floor(cx / texelX) * texelX;
+        cy = Math.Floor(cy / texelY) * texelY;
+
+        *minX = cx - width *0.5f;
+        *maxX = cx + width *0.5f;
+        *minY = cy - height*0.5f;
+        *maxY = cy + height*0.5f;
     }
 
     // Update cascade light matrices
@@ -125,6 +175,61 @@ class World {
 
             var ortho_size = (cascade_index * 5 + 1) * 4;
             lightProjs[cascade_index] = Raymath.MatrixOrtho(-ortho_size, ortho_size, -ortho_size, ortho_size, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+        }
+    }
+
+    void NewUpdateCascades(Camera3D camera) {
+        float lambda = 0.9f;
+        float zPadding = 30.0f;
+
+        float aspect = (float)Raylib.GetScreenWidth() / (float)Raylib.GetScreenHeight();
+        ComputeCascadeSplits(NUM_CASCADES, CULL_DISTANCE_NEAR, 100, lambda, &cascadeSplits);
+        Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
+
+        Vector3 worldUp = (Math.Abs(lightDir.y) > 0.99f) ? .(0,0,1) : .(0,1,0);
+
+        for (int cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            float nearSplit = cascadeSplits[cascade_index];
+            float farSplit  = cascadeSplits[cascade_index + 1];
+
+            Vector3[8] cornersWS = .();
+            FrustumSliceCornersWS(camera, aspect, nearSplit, farSplit, ref cornersWS);
+
+            Vector3 centroid = .(0, 0, 0);
+            for (int i = 0; i < 8; i++) centroid = Raymath.Vector3Add(centroid, cornersWS[i]);
+            centroid = Raymath.Vector3Scale(centroid, 1.0f/8.0f);
+
+            float distBack = 50.0f; // heuristic; large enough for your scene
+            Vector3 eye = Raymath.Vector3Subtract(centroid, Raymath.Vector3Scale(lightDir, distBack));
+            lightViews[cascade_index] = Raymath.MatrixLookAt(eye, centroid, worldUp);
+
+            float minX = float.MaxValue, minY = float.MaxValue, minZ = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue, maxZ = float.MinValue;
+            for (int i = 0; i < 8; i++) {
+                Vector3 ls = Raymath.Vector3Transform(cornersWS[i], lightViews[cascade_index]);
+                minX = Math.Min(minX, ls.x);
+                maxX = Math.Max(maxX, ls.x);
+                minY = Math.Min(minY, ls.y);
+                maxY = Math.Max(maxY, ls.y);
+                minZ = Math.Min(minZ, ls.z);
+                maxZ = Math.Max(maxZ, ls.z);
+            }
+
+            float padXY = 0.05f * Math.Max(maxX - minX, maxY - minY);
+            minX -= padXY;
+            maxX += padXY;
+            minY -= padXY;
+            maxY += padXY;
+
+            SnapOrthoToTexels(&minX, &maxX, &minY, &maxY, SHADOWMAP_RESOLUTION);
+
+            minZ -= zPadding;
+            maxZ += zPadding;
+
+            lightProjs[cascade_index] = Raymath.MatrixOrtho(minX, maxX, minY, maxY, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+
+            //var ortho_size = (cascade_index * 5 + 1) * 4;
+            //lightProjs[cascade_index] = Raymath.MatrixOrtho(-ortho_size, ortho_size, -ortho_size, ortho_size, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
         }
     }
 
@@ -165,7 +270,7 @@ class World {
     }
 
     private void RenderSceneForShadow(Camera3D playerCamera) {
-        UpdateCascades(playerCamera);
+        NewUpdateCascades(playerCamera);
 
         for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
             Raylib.BeginTextureMode(shadowMaps[cascade_index]);
