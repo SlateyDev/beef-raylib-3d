@@ -11,7 +11,7 @@ class World {
     private Shader mDepthShader;
     private Shader mShadowShader;
     private Matrix mLightSpaceMatrix;
-    private Vector3 lightDir = Raymath.Vector3Normalize(.( 0.35f, -1.0f, -0.35f ));
+    private Vector3 lightDir = Raymath.Vector3Normalize(.( 0.35f, -1.0f, -0.25f ));
     private Color lightColor = Raylib.WHITE;
     private Vector4 lightColorNormalized = Raylib.ColorNormalize(lightColor);
 

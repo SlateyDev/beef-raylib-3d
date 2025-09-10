@@ -110,7 +110,8 @@ void main()
     }
 
     float shadow = SampleShadow(cascade);
-    finalColor = mix(finalColor * vec4(myColors[cascade], 1), vec4(0, 0, 0, 1), float(shadow));
+    finalColor = mix(finalColor, vec4(0, 0, 0, 1), float(shadow));
+    //finalColor *= vec4(myColors[cascade], 1);
 
     // Add ambient lighting whether in shadow or not
     finalColor += texelColor*(ambient/10.0)*colDiffuse;
