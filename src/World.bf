@@ -7,25 +7,32 @@ class World {
     private int mWidth = 100;
     private int mHeight = 100;
 
-    private RenderTexture2D mShadowMap;
     private Camera3D mLightCamera;
     private Shader mDepthShader;
     private Shader mShadowShader;
     private Matrix mLightSpaceMatrix;
-    private Vector3 lightDir = Raymath.Vector3Normalize(.( 0.35f, -1.0f, -0.35f ));
+    private Vector3 lightDir = Raymath.Vector3Normalize(.( 0.35f, -1.0f, -0.25f ));
     private Color lightColor = Raylib.WHITE;
     private Vector4 lightColorNormalized = Raylib.ColorNormalize(lightColor);
 
-    private int32 lightVPLoc = 0;
     private int32 shadowMapLoc = 0;
     private int32 lightDirLoc = 0;
+    private int32 locSplits = 0;
 
     const int32 SHADOWMAP_RESOLUTION = 2048;
+    const int32 NUM_CASCADES = 3;
+    public const float CULL_DISTANCE_NEAR = 0.05f;
+    public const float CULL_DISTANCE_FAR = 1000;
 
+    private RenderTexture2D[NUM_CASCADES] shadowMaps;
+    private Matrix[NUM_CASCADES] lightViews;
+    private Matrix[NUM_CASCADES] lightProjs;
+    private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR);
+    private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
 
     public this() {
         LoadModels();
-        CreateObstacles();
+        //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
 #if BF_PLATFORM_WASM
@@ -37,9 +44,12 @@ class World {
 #endif
         
         // Initialize shadow mapping resources
-        mShadowMap = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            shadowMaps[cascade_index] = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
+        }
+
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
-        UpdateModelShaders();
+        mModelManager.UpdateModelShaders(mShadowShader);
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
         lightDirLoc = Raylib.GetShaderLocation(mShadowShader, "lightDir");
         int32 lightColLoc = Raylib.GetShaderLocation(mShadowShader, "lightColor");
@@ -48,24 +58,30 @@ class World {
         int32 ambientLoc = Raylib.GetShaderLocation(mShadowShader, "ambient");
         float[4] ambient = .(0.4f, 0.4f, 0.4f, 1.0f);
         Raylib.SetShaderValue(mShadowShader, ambientLoc, &ambient, ShaderUniformDataType.SHADER_UNIFORM_VEC4);
-        lightVPLoc = Raylib.GetShaderLocation(mShadowShader, "lightVP");
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            lightVPLocs[cascade_index] = Raylib.GetShaderLocation(mShadowShader, scope $"lightVP[{cascade_index}]");
+        }
         shadowMapLoc = Raylib.GetShaderLocation(mShadowShader, "shadowMap");
         int32 shadowMapResolution = SHADOWMAP_RESOLUTION;
         Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "shadowMapResolution"), &shadowMapResolution, ShaderUniformDataType.SHADER_UNIFORM_INT);
+        locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
+        Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
 
         // Setup light camera and calculate light space matrix
         mLightCamera = .(
             Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position),  // Light position
             Program.game.mPlayer.Position,     // Looking at center
             .(0.0f, 1.0f, 0.0f),     // Up vector
-            40.0f,                    // FOV
+            5.0f,                    // FOV
             CameraProjection.CAMERA_ORTHOGRAPHIC       // Projection type
         );
     }
 
     public ~this() {
-        DeleteContainerAndItems!(mModels);
-        UnloadShadowmapRenderTexture(mShadowMap);
+        DeleteContainerAndItems!(mModelInstances);
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            UnloadShadowmapRenderTexture(shadowMaps[cascade_index]);
+        }
         Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
     }
@@ -76,6 +92,145 @@ class World {
 
     public void Update(float frameTime) {
         // Update world state
+    }
+
+    private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
+        outSplits[0] = nearPlane;
+        outSplits[numCascades] = farPlane;
+
+        float range = farPlane - nearPlane;
+        float ratio = farPlane / nearPlane;
+
+        for (int cascade_index = 1; cascade_index < numCascades; cascade_index++) {
+            float p = (float)cascade_index / (float)numCascades;
+            float log = nearPlane * System.Math.Pow(ratio, p);
+            float uniform = nearPlane + range * p;
+            float d = lambda * (log - uniform) + uniform;
+            outSplits[cascade_index] = d;
+        }
+    }
+
+    private void FrustumSliceCornersWS(Camera3D cam, float aspect, float nearZ, float farZ, ref Vector3[8] outCorners) {
+        Vector3 fwd = Raymath.Vector3Normalize(Raymath.Vector3Subtract(cam.target, cam.position));
+        Vector3 right = Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(fwd, cam.up));
+        Vector3 up = Raymath.Vector3Normalize(Raymath.Vector3CrossProduct(right, fwd));
+
+        float tanHalfFovy = Math.Tan(cam.fovy * Raymath.DEG2RAD * 0.5f);
+
+        float nh = 2.0f * tanHalfFovy * nearZ;
+        float nw = nh * aspect;
+        float fh = 2.0f * tanHalfFovy * farZ;
+        float fw = fh * aspect;
+
+        Vector3 nc = Raymath.Vector3Add(cam.position, Raymath.Vector3Scale(fwd, nearZ));
+        Vector3 fc = Raymath.Vector3Add(cam.position, Raymath.Vector3Scale(fwd, farZ));
+
+        Vector3 upN = Raymath.Vector3Scale(up, nh * 0.5f);
+        Vector3 rtN = Raymath.Vector3Scale(right, nw * 0.5f);
+        Vector3 upF = Raymath.Vector3Scale(up, fh * 0.5f);
+        Vector3 rtF = Raymath.Vector3Scale(right, fw * 0.5f);
+
+        outCorners[0] = Raymath.Vector3Add(Raymath.Vector3Add(nc, upN),  rtN);
+        outCorners[1] = Raymath.Vector3Add(Raymath.Vector3Subtract(nc, rtN),  upN);
+        outCorners[2] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(nc, upN),  rtN);
+        outCorners[3] = Raymath.Vector3Subtract(Raymath.Vector3Add(nc, rtN),  upN);
+
+        outCorners[4] = Raymath.Vector3Add(Raymath.Vector3Add(fc, upF),  rtF);
+        outCorners[5] = Raymath.Vector3Add(Raymath.Vector3Subtract(fc, rtF),  upF);
+        outCorners[6] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(fc, upF),  rtF);
+        outCorners[7] = Raymath.Vector3Subtract(Raymath.Vector3Add(fc, rtF),  upF);
+    }
+
+    private void SnapOrthoToTexels(float* minX, float* maxX, float* minY, float* maxY, int mapSize) {
+        float width  = (*maxX - *minX);
+        float height = (*maxY - *minY);
+        float texelX = width  / (float)mapSize;
+        float texelY = height / (float)mapSize;
+
+        float cx = 0.5f*(*minX + *maxX);
+        float cy = 0.5f*(*minY + *maxY);
+
+        cx = Math.Floor(cx / texelX) * texelX;
+        cy = Math.Floor(cy / texelY) * texelY;
+
+        *minX = cx - width *0.5f;
+        *maxX = cx + width *0.5f;
+        *minY = cy - height*0.5f;
+        *maxY = cy + height*0.5f;
+    }
+
+    // Update cascade light matrices
+    void UpdateCascades(Camera3D camera) {
+        for (int cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            float nearSplit = cascadeSplits[cascade_index];
+            float farSplit  = cascadeSplits[cascade_index + 1];
+
+            // Here we just use a fixed-size ortho box for simplicity
+            Vector3 center = Raymath.Vector3Add(camera.position,
+                Raymath.Vector3Scale(Raymath.Vector3Normalize(Raymath.Vector3Subtract(camera.target, camera.position)),
+                (nearSplit + farSplit) * 0.5f));
+
+            Vector3 lightPos = Raymath.Vector3Add(center, Raymath.Vector3Scale(lightDir, -20.0f));
+            lightViews[cascade_index] = Raymath.MatrixLookAt(lightPos, center, .(0, 1, 0));
+
+            var ortho_size = (cascade_index * 5 + 1) * 4;
+            lightProjs[cascade_index] = Raymath.MatrixOrtho(-ortho_size, ortho_size, -ortho_size, ortho_size, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+        }
+    }
+
+    void NewUpdateCascades(Camera3D camera) {
+        float lambda = 0.9f;
+        float zPadding = 30.0f;
+
+        float aspect = (float)Raylib.GetScreenWidth() / (float)Raylib.GetScreenHeight();
+        ComputeCascadeSplits(NUM_CASCADES, CULL_DISTANCE_NEAR, 100, lambda, &cascadeSplits);
+        Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
+
+        Vector3 worldUp = (Math.Abs(lightDir.y) > 0.99f) ? .(0,0,1) : .(0,1,0);
+
+        for (int cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            float nearSplit = cascadeSplits[cascade_index];
+            float farSplit  = cascadeSplits[cascade_index + 1];
+
+            Vector3[8] cornersWS = .();
+            FrustumSliceCornersWS(camera, aspect, nearSplit, farSplit, ref cornersWS);
+
+            Vector3 centroid = .(0, 0, 0);
+            for (int i = 0; i < 8; i++) centroid = Raymath.Vector3Add(centroid, cornersWS[i]);
+            centroid = Raymath.Vector3Scale(centroid, 1.0f/8.0f);
+
+            float distBack = 50.0f; // heuristic; large enough for your scene
+            Vector3 eye = Raymath.Vector3Subtract(centroid, Raymath.Vector3Scale(lightDir, distBack));
+            lightViews[cascade_index] = Raymath.MatrixLookAt(eye, centroid, worldUp);
+
+            float minX = float.MaxValue, minY = float.MaxValue, minZ = float.MaxValue;
+            float maxX = float.MinValue, maxY = float.MinValue, maxZ = float.MinValue;
+            for (int i = 0; i < 8; i++) {
+                Vector3 ls = Raymath.Vector3Transform(cornersWS[i], lightViews[cascade_index]);
+                minX = Math.Min(minX, ls.x);
+                maxX = Math.Max(maxX, ls.x);
+                minY = Math.Min(minY, ls.y);
+                maxY = Math.Max(maxY, ls.y);
+                minZ = Math.Min(minZ, ls.z);
+                maxZ = Math.Max(maxZ, ls.z);
+            }
+
+            float padXY = 0.05f * Math.Max(maxX - minX, maxY - minY);
+            minX -= padXY;
+            maxX += padXY;
+            minY -= padXY;
+            maxY += padXY;
+
+            SnapOrthoToTexels(&minX, &maxX, &minY, &maxY, SHADOWMAP_RESOLUTION);
+
+            minZ -= zPadding;
+            maxZ += zPadding;
+
+            lightProjs[cascade_index] = Raymath.MatrixOrtho(minX, maxX, minY, maxY, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+
+            //var ortho_size = (cascade_index * 5 + 1) * 4;
+            //lightProjs[cascade_index] = Raymath.MatrixOrtho(-ortho_size, ortho_size, -ortho_size, ortho_size, CULL_DISTANCE_NEAR, CULL_DISTANCE_FAR);
+        }
     }
 
     Matrix lightView;
@@ -90,49 +245,76 @@ class World {
 
         // First pass: render to shadow map
         // Draw scene from light's perspective
-        RenderSceneForShadow();
+        RenderSceneForShadow(playerCamera);
 
         // Second pass: render scene with shadows
         // Render the scene from player perspective
         RenderSceneWithShadows(playerCamera);
     }
 
-    private void RenderSceneForShadow() {
-        Raylib.BeginTextureMode(mShadowMap);
-        Raylib.ClearBackground(Raylib.WHITE);
-        Raylib.BeginMode3D(mLightCamera);
-        lightView = Rlgl.rlGetMatrixModelview();
-        lightProj = Rlgl.rlGetMatrixProjection();
+    private void CustomBeginMode3D(Matrix proj, Matrix view) {
+        Rlgl.rlDrawRenderBatchActive();
 
-        // Draw floor
-        //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
-        
-        DrawCubes(Raylib.BLACK);
-        DrawModels();
+        Rlgl.rlMatrixMode(Rlgl.RL_PROJECTION);
+        Rlgl.rlPushMatrix();
+        Rlgl.rlLoadIdentity();
 
-        Raylib.EndMode3D();
-        Raylib.EndTextureMode();
+        Rlgl.rlMultMatrixf(&Raymath.MatrixToFloatV(proj).v[0]);
+
+        Rlgl.rlMatrixMode(Rlgl.RL_MODELVIEW);
+        Rlgl.rlLoadIdentity();
+
+        Rlgl.rlMultMatrixf(&Raymath.MatrixToFloatV(view).v[0]);
+
+        Rlgl.rlEnableDepthTest();
+    }
+
+    private void RenderSceneForShadow(Camera3D playerCamera) {
+        NewUpdateCascades(playerCamera);
+
+        for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            Raylib.BeginTextureMode(shadowMaps[cascade_index]);
+            Raylib.ClearBackground(Raylib.WHITE);
+            lightView = lightViews[cascade_index];
+            lightProj = lightProjs[cascade_index];
+            CustomBeginMode3D(lightProj, lightView);
+
+            // Draw floor
+            //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
+
+            //DrawCubes(Raylib.BLACK);
+            DrawModels();
+
+            Raylib.EndMode3D();
+            Raylib.EndTextureMode();
+        }
     }
 
     private void RenderSceneWithShadows(Camera3D playerCamera) {
         Raylib.ClearBackground(Raylib.BEIGE);
 
         // Calculate MVP matrix for the current camera
-        Matrix lightViewProj = Raymath.MatrixMultiply(lightView, lightProj);
-        Raylib.SetShaderValueMatrix(mShadowShader, lightVPLoc, lightViewProj);
+        Matrix[NUM_CASCADES] lightViewProj;
+        for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            lightViewProj[cascade_index] = Raymath.MatrixMultiply(lightViews[cascade_index], lightProjs[cascade_index]);
+            Raylib.SetShaderValueMatrix(mShadowShader, lightVPLocs[cascade_index], lightViewProj[cascade_index]);
+        }
 
-        int32 slot = 10; // Can be anything 0 to 15, but 0 will probably be taken up
-        Rlgl.rlActiveTextureSlot(slot);
-        Rlgl.rlEnableTexture(mShadowMap.depth.id);
-        Rlgl.rlSetUniform(shadowMapLoc, &slot, ShaderUniformDataType.SHADER_UNIFORM_INT, 1);
-        Raylib.BeginShaderMode(mShadowShader);
+        int32[NUM_CASCADES] slot;
+        for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            slot[cascade_index] = 10 + cascade_index; // Can be anything 0 to 15, but 0 will probably be taken up
+            Rlgl.rlActiveTextureSlot(slot[cascade_index]);
+            Rlgl.rlEnableTexture(shadowMaps[cascade_index].depth.id);
+        }
+        Rlgl.rlSetUniform(shadowMapLoc, &slot[0], ShaderUniformDataType.SHADER_UNIFORM_INT, 3);
 
         Raylib.BeginMode3D(playerCamera);
+        Raylib.BeginShaderMode(mShadowShader);
 
         // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
 
-        DrawCubes(Raylib.BLUE);
+        //DrawCubes(Raylib.WHITE);
         DrawModels();
 
         Raylib.EndShaderMode();
@@ -172,7 +354,7 @@ class World {
             Rlgl.rlFramebufferAttach(target.id, target.depth.id, rlFramebufferAttachType.RL_ATTACHMENT_DEPTH, rlFramebufferAttachTextureType.RL_ATTACHMENT_TEXTURE2D, 0);
     
             // Check if fbo is complete with attachments (valid)
-            //if (Rlgl.rlFramebufferComplete(target.id)) Raylib.TraceLog(TraceLogLevel.LOG_INFO, "FBO: [ID %i] Framebuffer object created successfully", target.id);
+            if (Rlgl.rlFramebufferComplete(target.id)) Console.WriteLine("FBO: [ID {}] Framebuffer object created successfully", target.id);
     
             Rlgl.rlDisableFramebuffer();
         }
@@ -191,7 +373,8 @@ class World {
     }
 
     public List<BoundingBox> mObstacles = new .() ~ delete _;
-    private List<Model3D> mModels = new .();
+    private ModelManager mModelManager = new .() ~ delete _;
+    private List<ModelInstance3D> mModelInstances = new .();
 
     private void CreateObstacles() {
         // Add obstacles for cubes
@@ -221,23 +404,94 @@ class World {
     private void LoadModels() {
         // Example: Load a GLTF model
         // Note: Adjust the path to your model files
-        let model = new Model3D("assets/models/charybdis.gltf");
-        model.Position = .(2, 0.5f, 0);
-        model.Scale = .(1f, 1f, 1f);
-        mModels.Add(model);
-    }
+        //let model = new Model3D("assets/models/charybdis.gltf");
+        //let model = new Model3D("assets/models/Untitled.gltf");
+        ModelInstance3D modelInstance;
 
-    private void UpdateModelShaders() {
-        for (let model in mModels) {
-            for (int i = 0; i < model.mModel.materialCount; i++) {
-                model.mModel.materials[i].shader = mShadowShader;
-            }
-        }
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
+        modelInstance.Position = .(2, 0.0f, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
+        modelInstance.Position = .(2, 0.0f, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
+        modelInstance.Position = .(2, 0.0f, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
+        modelInstance.Position = .(2, 0.0f, 3);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
+        modelInstance.Position = .(2 - 0.15f, 0.06f, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
+        modelInstance.Position = .(2 + 0.15f, 0.06f, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 180, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
+        modelInstance.Position = .(3, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_B.gltf"));
+        modelInstance.Position = .(3, 0, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_C.gltf"));
+        modelInstance.Position = .(1, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance.Position = .(1, 0, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_E.gltf"));
+        modelInstance.Position = .(1, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance.Position = .(1, 0, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_G.gltf"));
+        modelInstance.Position = .(1, 0, 3);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_H.gltf"));
+        modelInstance.Position = .(1, 0, 4);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
     }
 
     public void DrawModels() {
         // Draw models
-        for (let model in mModels) {
+        for (let model in mModelInstances) {
             model.Draw();
         }
     }
