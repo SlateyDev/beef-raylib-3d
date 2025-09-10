@@ -403,10 +403,32 @@ class World {
     private void LoadModels() {
         // Example: Load a GLTF model
         // Note: Adjust the path to your model files
-        let model = new Model3D("assets/models/charybdis.gltf");
+        //let model = new Model3D("assets/models/charybdis.gltf");
         //let model = new Model3D("assets/models/Untitled.gltf");
-        model.Position = .(2, 0.5f, 0);
+        var model = new Model3D("assets/models/road_corner.gltf");
+        model.Position = .(2, 0.0f, 0);
         model.Scale = .(1f, 1f, 1f);
+        mModels.Add(model);
+
+        model = new Model3D("assets/models/road_straight.gltf");
+        model.Position = .(2, 0.0f, 2);
+        model.Scale = .(1f, 1f, 1f);
+        mModels.Add(model);
+
+        model = new Model3D("assets/models/road_straight.gltf");
+        model.Position = .(2, 0.0f, 4);
+        model.Scale = .(1f, 1f, 1f);
+        mModels.Add(model);
+
+        model = new Model3D("assets/models/car_sedan.gltf");
+        model.Position = .(2 - 0.3f, 0.12f, 2);
+        model.Scale = .(1f, 1f, 1f);
+        mModels.Add(model);
+
+        model = new Model3D("assets/models/car_police.gltf");
+        model.Position = .(2 + 0.3f, 0.12f, 3);
+        model.Scale = .(1f, 1f, 1f);
+        model.Rotation = .(0, 180, 0);
         mModels.Add(model);
     }
 
