@@ -49,7 +49,7 @@ class World {
         }
 
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
-        UpdateModelShaders();
+        mModelManager.UpdateModelShaders(mShadowShader);
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
         lightDirLoc = Raylib.GetShaderLocation(mShadowShader, "lightDir");
         int32 lightColLoc = Raylib.GetShaderLocation(mShadowShader, "lightColor");
@@ -78,7 +78,7 @@ class World {
     }
 
     public ~this() {
-        DeleteContainerAndItems!(mModels);
+        DeleteContainerAndItems!(mModelInstances);
         for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
             UnloadShadowmapRenderTexture(shadowMaps[cascade_index]);
         }
@@ -282,7 +282,7 @@ class World {
             // Draw floor
             //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
 
-            DrawCubes(Raylib.BLACK);
+            //DrawCubes(Raylib.BLACK);
             DrawModels();
 
             Raylib.EndMode3D();
@@ -314,7 +314,7 @@ class World {
         // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
 
-        DrawCubes(Raylib.WHITE);
+        //DrawCubes(Raylib.WHITE);
         DrawModels();
 
         Raylib.EndShaderMode();
@@ -373,7 +373,8 @@ class World {
     }
 
     public List<BoundingBox> mObstacles = new .() ~ delete _;
-    private List<Model3D> mModels = new .();
+    private ModelManager mModelManager = new .() ~ delete _;
+    private List<ModelInstance3D> mModelInstances = new .();
 
     private void CreateObstacles() {
         // Add obstacles for cubes
@@ -405,44 +406,92 @@ class World {
         // Note: Adjust the path to your model files
         //let model = new Model3D("assets/models/charybdis.gltf");
         //let model = new Model3D("assets/models/Untitled.gltf");
-        var model = new Model3D("assets/models/road_corner.gltf");
-        model.Position = .(2, 0.0f, 0);
-        model.Scale = .(1f, 1f, 1f);
-        mModels.Add(model);
+        ModelInstance3D modelInstance;
 
-        model = new Model3D("assets/models/road_straight.gltf");
-        model.Position = .(2, 0.0f, 2);
-        model.Scale = .(1f, 1f, 1f);
-        mModels.Add(model);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
+        modelInstance.Position = .(2, 0.0f, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
 
-        model = new Model3D("assets/models/road_straight.gltf");
-        model.Position = .(2, 0.0f, 4);
-        model.Scale = .(1f, 1f, 1f);
-        mModels.Add(model);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
+        modelInstance.Position = .(2, 0.0f, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
 
-        model = new Model3D("assets/models/car_sedan.gltf");
-        model.Position = .(2 - 0.3f, 0.12f, 2);
-        model.Scale = .(1f, 1f, 1f);
-        mModels.Add(model);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
+        modelInstance.Position = .(2, 0.0f, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
 
-        model = new Model3D("assets/models/car_police.gltf");
-        model.Position = .(2 + 0.3f, 0.12f, 3);
-        model.Scale = .(1f, 1f, 1f);
-        model.Rotation = .(0, 180, 0);
-        mModels.Add(model);
-    }
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
+        modelInstance.Position = .(2, 0.0f, 3);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
 
-    private void UpdateModelShaders() {
-        for (let model in mModels) {
-            for (int i = 0; i < model.mModel.materialCount; i++) {
-                model.mModel.materials[i].shader = mShadowShader;
-            }
-        }
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
+        modelInstance.Position = .(2 - 0.15f, 0.06f, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
+        modelInstance.Position = .(2 + 0.15f, 0.06f, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 180, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
+        modelInstance.Position = .(3, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_B.gltf"));
+        modelInstance.Position = .(3, 0, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_C.gltf"));
+        modelInstance.Position = .(1, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance.Position = .(1, 0, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_E.gltf"));
+        modelInstance.Position = .(1, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance.Position = .(1, 0, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_G.gltf"));
+        modelInstance.Position = .(1, 0, 3);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_H.gltf"));
+        modelInstance.Position = .(1, 0, 4);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
     }
 
     public void DrawModels() {
         // Draw models
-        for (let model in mModels) {
+        for (let model in mModelInstances) {
             model.Draw();
         }
     }

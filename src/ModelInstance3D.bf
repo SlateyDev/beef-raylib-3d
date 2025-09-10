@@ -1,22 +1,17 @@
-using System;
-using System.Diagnostics;
 using RaylibBeef;
 
-class Model3D {
+class ModelInstance3D {
     public Model mModel;
     public Vector3 Position;
     public Vector3 Scale;
     public Vector3 Rotation;
 
-    public this(String modelPath) {
-        mModel = Raylib.LoadModel(modelPath);
+    public this(Model model) {
+        mModel = model;
+
         Position = .(0, 0, 0);
         Scale = .(1f, 1f, 1f);
         Rotation = .(0, 0, 0);
-    }
-
-    public ~this() {
-        Raylib.UnloadModel(mModel);
     }
 
     public void Draw() {
