@@ -30,8 +30,26 @@ class World {
     private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR);
     private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
 
+    Road road1;
+    Road road2;
+    Road road3;
+    Road road4;
+
     public this() {
         LoadModels();
+
+        road1 = new RoadCornerBR();
+        road2 = new RoadStraightNS();
+        road3 = new RoadStraightNS();
+        road4 = new RoadCornerTR();
+
+        road1.connections[(int)EntryExitSideOrLane.Bottom] = &road2;
+        road2.connections[(int)EntryExitSideOrLane.Top] = &road1;
+        road2.connections[(int)EntryExitSideOrLane.Bottom] = &road3;
+        road3.connections[(int)EntryExitSideOrLane.Top] = &road2;
+        road3.connections[(int)EntryExitSideOrLane.Bottom] = &road4;
+        road4.connections[(int)EntryExitSideOrLane.Top] = &road3;
+
         //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
@@ -84,6 +102,11 @@ class World {
         }
         Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
+
+        delete road1;
+        delete road2;
+        delete road3;
+        delete road4;
     }
 
     public void LoadLevel(StringView filePath) {
@@ -432,12 +455,12 @@ class World {
         modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
         modelInstance.Position = .(2 - 0.15f, 0.06f, 1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 180, 0);
         mModelInstances.Add(modelInstance);
 
         modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
         modelInstance.Position = .(2 + 0.15f, 0.06f, 2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 180, 0);
         mModelInstances.Add(modelInstance);
 
         modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
