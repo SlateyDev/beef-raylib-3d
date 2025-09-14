@@ -431,82 +431,87 @@ class World {
         //let model = new Model3D("assets/models/Untitled.gltf");
         ModelInstance3D modelInstance;
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
-        modelInstance.Position = .(2, 0.0f, 0);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner_curved.gltf"));
+        modelInstance.Position = .(1, 0, -2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         mModelInstances.Add(modelInstance);
 
         modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
-        modelInstance.Position = .(2, 0.0f, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
-        modelInstance.Position = .(2, 0.0f, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner.gltf"));
-        modelInstance.Position = .(2, 0.0f, 3);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
-        modelInstance.Position = .(2 - 0.15f, 0.06f, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 180, 0);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
-        modelInstance.Position = .(2 + 0.15f, 0.06f, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
-        modelInstance.Position = .(3, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_B.gltf"));
-        modelInstance.Position = .(3, 0, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
-
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_C.gltf"));
         modelInstance.Position = .(1, 0, -1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
         modelInstance.Position = .(1, 0, 0);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_E.gltf"));
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
         modelInstance.Position = .(1, 0, 1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner_curved.gltf"));
         modelInstance.Position = .(1, 0, 2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_G.gltf"));
-        modelInstance.Position = .(1, 0, 3);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
+        modelInstance.Position = .(1 - 0.15f, 0.06f, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 180, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
+        modelInstance.Position = .(1 + 0.15f, 0.06f, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
+        modelInstance.Position = .(2, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_B.gltf"));
+        modelInstance.Position = .(2, 0, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_H.gltf"));
+        modelInstance.Position = .(2, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_C.gltf"));
+        modelInstance.Position = .(0, 0, -2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_H.gltf"));
-        modelInstance.Position = .(1, 0, 4);
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance.Position = .(0, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_E.gltf"));
+        modelInstance.Position = .(0, 0, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance.Position = .(0, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+
+        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_G.gltf"));
+        modelInstance.Position = .(0, 0, 2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);

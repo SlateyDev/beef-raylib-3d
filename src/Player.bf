@@ -70,7 +70,7 @@ class Player
 
     private void HandleMovement(float frameTime, List<BoundingBox> obstacles) {
         // Calculate forward and right vectors based on rotation
-        float yawRadians = MathUtils.DegreesToRadians(RotationAngle);
+        float yawRadians = RotationAngle * Raymath.DEG2RAD;
         Vector3 forward = .(
             Math.Cos(yawRadians),
             0,
@@ -110,8 +110,8 @@ class Player
     }
 
     private void UpdateCamera() {
-        float yawRadians = MathUtils.DegreesToRadians(RotationAngle);
-        float pitchRadians = MathUtils.DegreesToRadians(PitchAngle);
+        float yawRadians = RotationAngle * Raymath.DEG2RAD;
+        float pitchRadians = PitchAngle * Raymath.DEG2RAD;
 
         // Calculate the target position using both yaw and pitch
         Vector3 target = .(
