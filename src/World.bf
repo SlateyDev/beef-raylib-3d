@@ -30,25 +30,10 @@ class World {
     private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR);
     private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
 
-    Road road1;
-    Road road2;
-    Road road3;
-    Road road4;
+    private Dictionary<GridPos, Road> roadTiles = new Dictionary<GridPos, Road>() ~ delete _;
 
     public this() {
         LoadModels();
-
-        road1 = new RoadCornerBR();
-        road2 = new RoadStraightNS();
-        road3 = new RoadStraightNS();
-        road4 = new RoadCornerTR();
-
-        road1.connections[(int)EntryExitSideOrLane.Bottom] = &road2;
-        road2.connections[(int)EntryExitSideOrLane.Top] = &road1;
-        road2.connections[(int)EntryExitSideOrLane.Bottom] = &road3;
-        road3.connections[(int)EntryExitSideOrLane.Top] = &road2;
-        road3.connections[(int)EntryExitSideOrLane.Bottom] = &road4;
-        road4.connections[(int)EntryExitSideOrLane.Top] = &road3;
 
         //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
@@ -67,7 +52,7 @@ class World {
         }
 
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
-        mModelManager.UpdateModelShaders(mShadowShader);
+        ModelManager.UpdateModelShaders(mShadowShader);
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
         lightDirLoc = Raylib.GetShaderLocation(mShadowShader, "lightDir");
         int32 lightColLoc = Raylib.GetShaderLocation(mShadowShader, "lightColor");
@@ -102,11 +87,6 @@ class World {
         }
         Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
-
-        delete road1;
-        delete road2;
-        delete road3;
-        delete road4;
     }
 
     public void LoadLevel(StringView filePath) {
@@ -396,7 +376,6 @@ class World {
     }
 
     public List<BoundingBox> mObstacles = new .() ~ delete _;
-    private ModelManager mModelManager = new .() ~ delete _;
     private List<ModelInstance3D> mModelInstances = new .();
 
     private void CreateObstacles() {
@@ -424,6 +403,96 @@ class World {
         mObstacles.Add(.(min, max));
     }
 
+    private void CreateConnections() {
+        for (var item in roadTiles) {
+            bool[4] links = .();
+
+            var data = item.value.GetRoadData();
+            for (var pathIndex = 0; pathIndex < data.numPaths; pathIndex++) {
+                links[(int)data.paths[pathIndex].sideA] = true;
+                links[(int)data.paths[pathIndex].sideB] = true;
+            }
+
+            if (links[(int)EntryExitSide.North]) {
+                Road northRoad;
+                var northKey = item.key - .(0, 0, 1);
+                let hasNorthRoad = roadTiles.TryGetValue(northKey, out northRoad);
+                if (hasNorthRoad) {
+                    //Make sure on of the connected road paths goes south to meet this incomming road
+                    var roadData = northRoad.GetRoadData();
+                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                        if (roadData.paths[pathIndex].sideA == .South || roadData.paths[pathIndex].sideB == .South) {
+                            //Make connection and exit
+                            item.value.connections[(int)EntryExitSide.North] = northRoad;
+                            Console.WriteLine($"Linking {item.key} on North side to {northKey}");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (links[(int)EntryExitSide.East]) {
+                Road eastRoad;
+                var eastKey = item.key + .(1, 0, 0);
+                let hasEastRoad = roadTiles.TryGetValue(eastKey, out eastRoad);
+                if (hasEastRoad) {
+                    //Make sure on of the connected road paths goes south to meet this incomming road
+                    var roadData = eastRoad.GetRoadData();
+                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                        if (roadData.paths[pathIndex].sideA == .West || roadData.paths[pathIndex].sideB == .West) {
+                            //Make connection and exit
+                            item.value.connections[(int)EntryExitSide.East] = eastRoad;
+                            Console.WriteLine($"Linking {item.key} on East side to {eastKey}");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (links[(int)EntryExitSide.South]) {
+                Road southRoad;
+                var southKey = item.key + .(0, 0, 1);
+                let hasSouthRoad = roadTiles.TryGetValue(southKey, out southRoad);
+                if (hasSouthRoad) {
+                    //Make sure on of the connected road paths goes south to meet this incomming road
+                    var roadData = southRoad.GetRoadData();
+                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                        if (roadData.paths[pathIndex].sideA == .North || roadData.paths[pathIndex].sideB == .North) {
+                            //Make connection and exit
+                            item.value.connections[(int)EntryExitSide.South] = southRoad;
+                            Console.WriteLine($"Linking {item.key} on South side to {southKey}");
+                            break;
+                        }
+                    }
+                }
+            }
+
+            if (links[(int)EntryExitSide.West]) {
+                Road westRoad;
+                var westKey = item.key - .(1, 0, 0);
+                let hasWestRoad = roadTiles.TryGetValue(westKey, out westRoad);
+                if (hasWestRoad) {
+                    //Make sure on of the connected road paths goes south to meet this incomming road
+                    var roadData = westRoad.GetRoadData();
+                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                        if (roadData.paths[pathIndex].sideA == .East || roadData.paths[pathIndex].sideB == .East) {
+                            //Make connection and exit
+                            item.value.connections[(int)EntryExitSide.West] = westRoad;
+                            Console.WriteLine($"Linking {item.key} on West side to {westKey}");
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void AddRoadTile(Road tile, GridPos position) {
+        tile.Position = .(position.x, position.y, position.z);
+        mModelInstances.Add(tile);
+        roadTiles.Add(position, tile);
+    }
+
     private void LoadModels() {
         // Example: Load a GLTF model
         // Note: Adjust the path to your model files
@@ -431,86 +500,87 @@ class World {
         //let model = new Model3D("assets/models/Untitled.gltf");
         ModelInstance3D modelInstance;
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner_curved.gltf"));
-        modelInstance.Position = .(1, 0, -2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
+        AddRoadTile(new RoadCornerSE(), .(1, 0, -2));
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
-        modelInstance.Position = .(1, 0, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
+        AddRoadTile(new RoadStraightNS(), .(1, 0, -1));
+        AddRoadTile(new RoadStraightNS(), .(1, 0, 0));
+        AddRoadTile(new RoadStraightNS(), .(1, 0, 1));
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
-        modelInstance.Position = .(1, 0, 0);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
+        AddRoadTile(new RoadCornerNE(), .(1, 0, 2));
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_straight.gltf"));
-        modelInstance.Position = .(1, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
+        AddRoadTile(new RoadStraightEW(), .(2, 0, 2));
+        AddRoadTile(new RoadStraightEW(), .(3, 0, 2));
+        AddRoadTile(new RoadStraightEW(), .(4, 0, 2));
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/road_corner_curved.gltf"));
-        modelInstance.Position = .(1, 0, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
+        AddRoadTile(new RoadCornerNW(), .(5, 0, 2));
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_sedan.gltf"));
+        AddRoadTile(new RoadStraightNS(), .(5, 0, 1));
+        AddRoadTile(new RoadStraightNS(), .(5, 0, 0));
+        AddRoadTile(new RoadStraightNS(), .(5, 0, -1));
+
+        AddRoadTile(new RoadCornerSW(), .(5, 0, -2));
+
+        AddRoadTile(new RoadStraightEW(), .(4, 0, -2));
+        AddRoadTile(new RoadStraightEW(), .(3, 0, -2));
+        AddRoadTile(new RoadStraightEW(), .(2, 0, -2));
+
+        CreateConnections();
+
+
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_sedan.gltf"));
         modelInstance.Position = .(1 - 0.15f, 0.06f, -1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 180, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/car_police.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_police.gltf"));
         modelInstance.Position = .(1 + 0.15f, 0.06f, 1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_A.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
         modelInstance.Position = .(2, 0, -1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 270, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_B.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
         modelInstance.Position = .(2, 0, 0);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 270, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_H.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
         modelInstance.Position = .(2, 0, 1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 270, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_C.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
         modelInstance.Position = .(0, 0, -2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
         modelInstance.Position = .(0, 0, -1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_E.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_E.gltf"));
         modelInstance.Position = .(0, 0, 0);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
         modelInstance.Position = .(0, 0, 1);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(mModelManager.Get("assets/models/building_G.gltf"));
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
         modelInstance.Position = .(0, 0, 2);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
