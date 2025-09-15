@@ -403,94 +403,101 @@ class World {
         mObstacles.Add(.(min, max));
     }
 
-    private void CreateConnections() {
-        for (var item in roadTiles) {
-            bool[4] links = .();
+    private void AddRoadTile(Road tile, GridPos position) {
+        Console.WriteLine($"Adding road tile at {position}");
 
-            var data = item.value.GetRoadData();
-            for (var pathIndex = 0; pathIndex < data.numPaths; pathIndex++) {
-                links[(int)data.paths[pathIndex].sideA] = true;
-                links[(int)data.paths[pathIndex].sideB] = true;
-            }
+        //TODO: Check if we are replacing an existing tile and if links already exist and disconnect them first
+        tile.Position = .(position.x, position.y, position.z);
+        mModelInstances.Add(tile);
+        roadTiles.Add(position, tile);
 
-            if (links[(int)EntryExitSide.North]) {
-                Road northRoad;
-                var northKey = item.key - .(0, 0, 1);
-                let hasNorthRoad = roadTiles.TryGetValue(northKey, out northRoad);
-                if (hasNorthRoad) {
-                    //Make sure on of the connected road paths goes south to meet this incomming road
-                    var roadData = northRoad.GetRoadData();
-                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
-                        if (roadData.paths[pathIndex].sideA == .South || roadData.paths[pathIndex].sideB == .South) {
-                            //Make connection and exit
-                            item.value.connections[(int)EntryExitSide.North] = northRoad;
-                            Console.WriteLine($"Linking {item.key} on North side to {northKey}");
-                            break;
-                        }
-                    }
-                }
-            }
+        bool[4] links = .();
 
-            if (links[(int)EntryExitSide.East]) {
-                Road eastRoad;
-                var eastKey = item.key + .(1, 0, 0);
-                let hasEastRoad = roadTiles.TryGetValue(eastKey, out eastRoad);
-                if (hasEastRoad) {
-                    //Make sure on of the connected road paths goes south to meet this incomming road
-                    var roadData = eastRoad.GetRoadData();
-                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
-                        if (roadData.paths[pathIndex].sideA == .West || roadData.paths[pathIndex].sideB == .West) {
-                            //Make connection and exit
-                            item.value.connections[(int)EntryExitSide.East] = eastRoad;
-                            Console.WriteLine($"Linking {item.key} on East side to {eastKey}");
-                            break;
-                        }
-                    }
-                }
-            }
+        var data = tile.GetRoadData();
+        for (var pathIndex = 0; pathIndex < data.numPaths; pathIndex++) {
+            links[(int)data.paths[pathIndex].sideA] = true;
+            links[(int)data.paths[pathIndex].sideB] = true;
+        }
 
-            if (links[(int)EntryExitSide.South]) {
-                Road southRoad;
-                var southKey = item.key + .(0, 0, 1);
-                let hasSouthRoad = roadTiles.TryGetValue(southKey, out southRoad);
-                if (hasSouthRoad) {
-                    //Make sure on of the connected road paths goes south to meet this incomming road
-                    var roadData = southRoad.GetRoadData();
-                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
-                        if (roadData.paths[pathIndex].sideA == .North || roadData.paths[pathIndex].sideB == .North) {
-                            //Make connection and exit
-                            item.value.connections[(int)EntryExitSide.South] = southRoad;
-                            Console.WriteLine($"Linking {item.key} on South side to {southKey}");
-                            break;
-                        }
-                    }
-                }
-            }
-
-            if (links[(int)EntryExitSide.West]) {
-                Road westRoad;
-                var westKey = item.key - .(1, 0, 0);
-                let hasWestRoad = roadTiles.TryGetValue(westKey, out westRoad);
-                if (hasWestRoad) {
-                    //Make sure on of the connected road paths goes south to meet this incomming road
-                    var roadData = westRoad.GetRoadData();
-                    for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
-                        if (roadData.paths[pathIndex].sideA == .East || roadData.paths[pathIndex].sideB == .East) {
-                            //Make connection and exit
-                            item.value.connections[(int)EntryExitSide.West] = westRoad;
-                            Console.WriteLine($"Linking {item.key} on West side to {westKey}");
-                            break;
-                        }
+        if (links[(int)EntryExitSide.North]) {
+            Road northRoad;
+            var northKey = position - .(0, 0, 1);
+            let hasNorthRoad = roadTiles.TryGetValue(northKey, out northRoad);
+            if (hasNorthRoad) {
+                //Make sure on of the connected road paths goes south to meet this incomming road
+                var roadData = northRoad.GetRoadData();
+                for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                    if (roadData.paths[pathIndex].sideA == .South || roadData.paths[pathIndex].sideB == .South) {
+                        //Make connection and exit
+                        tile.connections[(int)EntryExitSide.North] = northRoad;
+                        Console.WriteLine($"Linking {position} on North side to {northKey}");
+                        northRoad.connections[(int)EntryExitSide.South] = tile;
+                        Console.WriteLine($"Linking {northKey} on South side to {position}");
+                        break;
                     }
                 }
             }
         }
-    }
 
-    private void AddRoadTile(Road tile, GridPos position) {
-        tile.Position = .(position.x, position.y, position.z);
-        mModelInstances.Add(tile);
-        roadTiles.Add(position, tile);
+        if (links[(int)EntryExitSide.East]) {
+            Road eastRoad;
+            var eastKey = position + .(1, 0, 0);
+            let hasEastRoad = roadTiles.TryGetValue(eastKey, out eastRoad);
+            if (hasEastRoad) {
+                //Make sure on of the connected road paths goes south to meet this incomming road
+                var roadData = eastRoad.GetRoadData();
+                for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                    if (roadData.paths[pathIndex].sideA == .West || roadData.paths[pathIndex].sideB == .West) {
+                        //Make connection and exit
+                        tile.connections[(int)EntryExitSide.East] = eastRoad;
+                        Console.WriteLine($"Linking {position} on East side to {eastKey}");
+                        eastRoad.connections[(int)EntryExitSide.West] = tile;
+                        Console.WriteLine($"Linking {eastKey} on West side to {position}");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (links[(int)EntryExitSide.South]) {
+            Road southRoad;
+            var southKey = position + .(0, 0, 1);
+            let hasSouthRoad = roadTiles.TryGetValue(southKey, out southRoad);
+            if (hasSouthRoad) {
+                //Make sure on of the connected road paths goes south to meet this incomming road
+                var roadData = southRoad.GetRoadData();
+                for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                    if (roadData.paths[pathIndex].sideA == .North || roadData.paths[pathIndex].sideB == .North) {
+                        //Make connection and exit
+                        tile.connections[(int)EntryExitSide.South] = southRoad;
+                        Console.WriteLine($"Linking {position} on South side to {southKey}");
+                        southRoad.connections[(int)EntryExitSide.North] = tile;
+                        Console.WriteLine($"Linking {southKey} on North side to {position}");
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (links[(int)EntryExitSide.West]) {
+            Road westRoad;
+            var westKey = position - .(1, 0, 0);
+            let hasWestRoad = roadTiles.TryGetValue(westKey, out westRoad);
+            if (hasWestRoad) {
+                //Make sure on of the connected road paths goes south to meet this incomming road
+                var roadData = westRoad.GetRoadData();
+                for (var pathIndex = 0; pathIndex < roadData.numPaths; pathIndex++) {
+                    if (roadData.paths[pathIndex].sideA == .East || roadData.paths[pathIndex].sideB == .East) {
+                        //Make connection and exit
+                        tile.connections[(int)EntryExitSide.West] = westRoad;
+                        Console.WriteLine($"Linking {position} on West side to {westKey}");
+                        westRoad.connections[(int)EntryExitSide.East] = tile;
+                        Console.WriteLine($"Linking {westKey} on East side to {position}");
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     private void LoadModels() {
@@ -523,8 +530,6 @@ class World {
         AddRoadTile(new RoadStraightEW(), .(4, 0, -2));
         AddRoadTile(new RoadStraightEW(), .(3, 0, -2));
         AddRoadTile(new RoadStraightEW(), .(2, 0, -2));
-
-        CreateConnections();
 
 
         modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_sedan.gltf"));
