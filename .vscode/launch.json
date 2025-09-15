@@ -1,0 +1,18 @@
+{
+    "configurations": [
+    {
+        "type": "lldb",
+        "request": "launch",
+        "name": "Launch",
+        "preLaunchTask": "Build Beef Application",
+        "linux": {
+            "program": "${workspaceFolder}/build/Debug_Linux64/beef-raylib-3d-game/beef-raylib-3d-game",
+            "cwd": "${workspaceFolder}"
+        },
+        "windows": {
+            "program": "${workspaceFolder}/build/Debug_Win64/beef-raylib-3d-game/beef-raylib-3d-game.exe",
+            "cwd": "${workspaceFolder}"
+        },
+    }
+    ]
+}
