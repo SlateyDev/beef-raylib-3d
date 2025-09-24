@@ -2,8 +2,158 @@ using System;
 using System.Collections;
 using RaylibBeef;
 
-public class Car {
-    public List<PathPoint> points;
+public abstract class Car : ModelInstance3D {
+    public this(Model model) : base(model) {}
+
+    //public List<PathPoint> points;
+    public Road currentRoadSegment;
+
+    public int currentSegmentDirection = 0; //Use this instead for current segment? This is so it knows what way to follow the path?
+
+    public int currentPathIndex = 0;
+    public int currentPointIndex = 0;
+    public int nextPointDirection = 1;      //If moving from one road segment to another, this may not make sense, might need something else
+    public EntryExitSide entrySide;
+    public EntryExitSide exitSide;
+
+    public PathPoint pointA;
+    public PathPoint pointB;
+
+    private bool initialized = false;
+
+    public void Start() {
+        Random rand = new Random();
+        defer delete rand;
+
+        if (currentRoadSegment == null)
+            return;
+
+        // Pick a random path, point to start at and direction on the current road segment
+        var roadData = currentRoadSegment.GetRoadData();
+        currentPathIndex = rand.Next(0, roadData.numPaths);
+        currentPointIndex = 0;//rand.Next(0, roadData.paths[currentPathIndex].numPoints);
+        nextPointDirection = rand.Next(0, 2) == 0 ? 1 : -1;
+        entrySide = nextPointDirection > 0 ? roadData.paths[currentPathIndex].sideA : roadData.paths[currentPathIndex].sideB;
+        exitSide = nextPointDirection > 0 ? roadData.paths[currentPathIndex].sideB : roadData.paths[currentPathIndex].sideA;
+        pointA = roadData.paths[currentPathIndex].points[currentPointIndex];
+        pointB = GetNextPoint();
+        Position = Raymath.Vector3Add(currentRoadSegment.Position, pointA.position);
+
+        initialized = true;
+    }
+
+    private PathPoint GetNextPoint() {
+        if (currentRoadSegment == null)
+            return .{};
+        
+        if (!initialized) {
+            return .{};
+        }
+
+        var roadData = currentRoadSegment.GetRoadData();
+        if (currentPathIndex < 0 || currentPathIndex >= roadData.numPaths)
+            return .{};
+
+        var path = roadData.paths[currentPathIndex];
+        var nextPointIndex = currentPointIndex + nextPointDirection;
+        if (nextPointIndex < 0 || nextPointIndex >= path.numPoints) {
+            // Reached the end of the path
+            // Get point of next road segment
+            var nextRoad = currentRoadSegment.connections[(int)exitSide];
+            if (nextRoad == null) {
+                // No connected road, stop here
+                return .{};
+            }
+
+            var nextRoadData = nextRoad.GetRoadData();
+            int nextPathIndex = -1;
+            for (int pathIndex = 0; pathIndex < nextRoadData.numPaths; pathIndex++) {
+                var nextPath = nextRoadData.paths[pathIndex];
+                if ((nextPath.sideA == RoadConnections.GetOppositeSide(exitSide)) ||
+                    (nextPath.sideB == RoadConnections.GetOppositeSide(exitSide))) {
+                    nextPathIndex = pathIndex;
+
+                    if (nextPath.sideA == RoadConnections.GetOppositeSide(exitSide)) {
+                        nextPointIndex = 0;
+                        nextPointDirection = 1;     //If moving from one road segment to another, this may not make sense, might need something else
+                        entrySide = nextPath.sideA;
+                        exitSide = nextPath.sideB;
+                    } else {
+                        nextPointIndex = nextPath.numPoints - 1;
+                        nextPointDirection = -1;    //If moving from one road segment to another, this may not make sense, might need something else
+                        entrySide = nextPath.sideB;
+                        exitSide = nextPath.sideA;
+                    }
+                    break;
+                }
+            }
+            return .{};
+        }
+
+        pointA = path.points[currentPointIndex];
+        pointB = path.points[nextPointIndex];
+        currentPointIndex = nextPointIndex;
+
+        return pointB;
+    }
+
+    public void UpdatePosition(float deltaTime) {
+        if (!initialized) {
+            Start();
+        }
+    //AI's bad guess (might be useful?)
+    //     if (currentRoadSegment == null)
+    //         return;
+
+    //     t += deltaTime * 0.1f; // Adjust speed as needed
+    //     if (t > 1.0f) {
+    //         t = 1.0f;
+    //     }
+
+    //     Vector3 newPos = RoadConnections.Evaluate(currentRoadSegment.GetRoadData().paths[0], t);
+    //     Position = newPos;
+
+    //     // Optional: Update rotation based on direction of movement
+    //     if (t < 1.0f) {
+    //         Vector3 nextPos = RoadConnections.Evaluate(currentRoadSegment.GetRoadData().paths[0], Math.Min(t + 0.01f, 1.0f));
+    //         Vector3 direction = Raymath.Vector3Subtract(nextPos, newPos);
+    //         if (Raymath.Vector3Length(direction) > 0.001f) {
+    //             direction = Raymath.Vector3Normalize(direction);
+    //             float angleY = Math.Atan2(direction.x, direction.z) * (180.0f / Math.PI_f);
+    //             Rotation = .(0, angleY, 0);
+    //         }
+    //     }
+    }
+}
+
+public class CarHatchBack : Car {
+    public this() : base(ModelManager.Get("assets/models/car_hatchback.gltf")) {
+        Scale = .(0.5f, 0.5f, 0.5f);
+    }
+}
+
+public class CarPolice : Car {
+    public this() : base(ModelManager.Get("assets/models/car_police.gltf")) {
+        Scale = .(0.5f, 0.5f, 0.5f);
+    }
+}
+
+public class CarSedan : Car {
+    public this() : base(ModelManager.Get("assets/models/car_sedan.gltf")) {
+        Scale = .(0.5f, 0.5f, 0.5f);
+    }
+}
+
+public class CarStationWagon : Car {
+    public this() : base(ModelManager.Get("assets/models/car_stationwagon.gltf")) {
+        Scale = .(0.5f, 0.5f, 0.5f);
+    }
+}
+
+public class CarTaxi : Car {
+    public this() : base(ModelManager.Get("assets/models/car_taxi.gltf")) {
+        Scale = .(0.5f, 0.5f, 0.5f);
+    }
 }
 
 public enum EntryExitSide : int {
@@ -47,7 +197,7 @@ public static class RoadConnections {
         return side;
     }
 
-    public static Vector3 Evaluate(RoadPath *roadPath, float t) {
+    public static Vector3 Evaluate(RoadPath roadPath, float t) {
         if (roadPath.numPoints < 2) {
             return .(0, 0, 0);
         }
@@ -63,7 +213,7 @@ public static class RoadConnections {
     }
 
     // Evaluate a single segment using cubic Bezier
-    private static Vector3 EvaluateSegment(RoadPath *roadPath, int index, float t)
+    private static Vector3 EvaluateSegment(RoadPath roadPath, int index, float t)
     {
         let p0 = roadPath.points[index];
         let p3 = roadPath.points[index + 1];

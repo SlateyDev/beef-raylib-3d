@@ -31,6 +31,7 @@ class World {
     private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
 
     private Dictionary<GridPos, Road> roadTiles = new Dictionary<GridPos, Road>() ~ delete _;
+    private List<Car> cars = new .() ~ delete _;
 
     public this() {
         LoadModels();
@@ -531,6 +532,11 @@ class World {
         AddRoadTile(new RoadStraightEW(), .(3, 0, -2));
         AddRoadTile(new RoadStraightEW(), .(2, 0, -2));
 
+        CarTaxi taxi = new CarTaxi();
+        mModelInstances.Add(taxi);
+        cars.Add(taxi);
+        taxi.currentRoadSegment = roadTiles[.(1, 0, -2)];
+        taxi.Start();
 
         modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_sedan.gltf"));
         modelInstance.Position = .(1 - 0.15f, 0.06f, -1);
@@ -590,6 +596,7 @@ class World {
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
+        
     }
 
     public void DrawModels() {
