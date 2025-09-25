@@ -14,6 +14,8 @@ class ModelInstance3D {
         Rotation = .(0, 0, 0);
     }
 
+    public virtual void Update(float deltaTime) {}
+
     public virtual void Draw() {
         Matrix saveMatrix = mModel.transform;
         Raylib.DrawModelEx(mModel, Position, Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);

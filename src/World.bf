@@ -96,6 +96,9 @@ class World {
 
     public void Update(float frameTime) {
         // Update world state
+        for (var modelInstance in mModelInstances) {
+            modelInstance.Update(frameTime);
+        }
     }
 
     private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {

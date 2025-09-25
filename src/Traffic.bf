@@ -7,17 +7,16 @@ public abstract class Car : ModelInstance3D {
 
     //public List<PathPoint> points;
     public Road currentRoadSegment;
+    private Road nextRoadSegment;
+    private int currentSegmentDirection = 1; //Use this instead for current segment? This is so it knows what way to follow the path?
+    private int currentPathIndex = 0;
+    private int currentPointIndex = 0;
 
-    public int currentSegmentDirection = 0; //Use this instead for current segment? This is so it knows what way to follow the path?
+    private EntryExitSide exitSide;
 
-    public int currentPathIndex = 0;
-    public int currentPointIndex = 0;
-    public int nextPointDirection = 1;      //If moving from one road segment to another, this may not make sense, might need something else
-    public EntryExitSide entrySide;
-    public EntryExitSide exitSide;
-
-    public PathPoint pointA;
-    public PathPoint pointB;
+    private PathPoint pointA;
+    private PathPoint pointB;
+    private float t = 0;
 
     private bool initialized = false;
 
@@ -32,74 +31,79 @@ public abstract class Car : ModelInstance3D {
         var roadData = currentRoadSegment.GetRoadData();
         currentPathIndex = rand.Next(0, roadData.numPaths);
         currentPointIndex = 0;//rand.Next(0, roadData.paths[currentPathIndex].numPoints);
-        nextPointDirection = rand.Next(0, 2) == 0 ? 1 : -1;
-        entrySide = nextPointDirection > 0 ? roadData.paths[currentPathIndex].sideA : roadData.paths[currentPathIndex].sideB;
-        exitSide = nextPointDirection > 0 ? roadData.paths[currentPathIndex].sideB : roadData.paths[currentPathIndex].sideA;
+        currentSegmentDirection = rand.Next(0, 2) == 0 ? 1 : -1;
+        exitSide = currentSegmentDirection > 0 ? roadData.paths[currentPathIndex].sideB : roadData.paths[currentPathIndex].sideA;
         pointA = roadData.paths[currentPathIndex].points[currentPointIndex];
-        pointB = GetNextPoint();
+        GetNextPoint();
         Position = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
 
         initialized = true;
     }
 
-    private PathPoint GetNextPoint() {
+    private void GetNextPoint() {
         if (currentRoadSegment == null)
-            return .{};
+            return;
         
-        if (!initialized) {
-            return .{};
+        var roadData = currentRoadSegment.GetRoadData();
+        if (currentPathIndex < 0 || currentPathIndex >= roadData.numPaths) {
+            return;
         }
 
-        var roadData = currentRoadSegment.GetRoadData();
-        if (currentPathIndex < 0 || currentPathIndex >= roadData.numPaths)
-            return .{};
-
         var path = roadData.paths[currentPathIndex];
-        var nextPointIndex = currentPointIndex + nextPointDirection;
-        if (nextPointIndex < 0 || nextPointIndex >= path.numPoints) {
+        currentPointIndex += currentSegmentDirection;
+        if (currentPointIndex < 0 || currentPointIndex >= path.numPoints) {
             // Reached the end of the path
             // Get point of next road segment
-            var nextRoad = currentRoadSegment.connections[(int)exitSide];
-            if (nextRoad == null) {
+            nextRoadSegment = currentRoadSegment.connections[(int)exitSide];
+            if (nextRoadSegment == null) {
                 // No connected road, stop here
-                return .{};
+                return;
             }
 
-            var nextRoadData = nextRoad.GetRoadData();
-            int nextPathIndex = -1;
+            var nextRoadData = nextRoadSegment.GetRoadData();
             for (int pathIndex = 0; pathIndex < nextRoadData.numPaths; pathIndex++) {
                 var nextPath = nextRoadData.paths[pathIndex];
                 if ((nextPath.sideA == RoadConnections.GetOppositeSide(exitSide)) ||
                     (nextPath.sideB == RoadConnections.GetOppositeSide(exitSide))) {
-                    nextPathIndex = pathIndex;
+                    currentPathIndex = pathIndex;
 
                     if (nextPath.sideA == RoadConnections.GetOppositeSide(exitSide)) {
-                        nextPointIndex = 0;
-                        nextPointDirection = 1;     //If moving from one road segment to another, this may not make sense, might need something else
-                        entrySide = nextPath.sideA;
+                        currentPointIndex = 0;
+                        currentSegmentDirection = 1;     //If moving from one road segment to another, this may not make sense, might need something else
                         exitSide = nextPath.sideB;
                     } else {
-                        nextPointIndex = nextPath.numPoints - 1;
-                        nextPointDirection = -1;    //If moving from one road segment to another, this may not make sense, might need something else
-                        entrySide = nextPath.sideB;
+                        currentPointIndex = nextPath.numPoints - 1;
+                        currentSegmentDirection = -1;    //If moving from one road segment to another, this may not make sense, might need something else
                         exitSide = nextPath.sideA;
+                    }
+                    if (nextPath.numPoints == 0) {
+                        // Straight road segment without defined path points, just continue in the same direction
+                        pointB = .{};
+                    } else {
+                        pointB = nextPath.points[currentPointIndex];
                     }
                     break;
                 }
             }
-            return .{};
+            return;
+        } else {
+            nextRoadSegment = currentRoadSegment;
+            pointB = path.points[currentPointIndex];
         }
-
-        pointA = path.points[currentPointIndex];
-        pointB = path.points[nextPointIndex];
-        currentPointIndex = nextPointIndex;
-
-        return pointB;
     }
 
-    public void UpdatePosition(float deltaTime) {
+    public override void Update(float deltaTime) {
         if (!initialized) {
             Start();
+            return;
+        }
+
+        t += deltaTime;
+        if (t >= 1) {
+            currentRoadSegment = nextRoadSegment;
+            pointA = pointB;
+            GetNextPoint();
+            t = 0;
         }
     //AI's bad guess (might be useful?)
     //     if (currentRoadSegment == null)
@@ -126,8 +130,13 @@ public abstract class Car : ModelInstance3D {
     }
 
     public override void Draw() {
+        if (!initialized) {
+            return;
+        }
+        var posA = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
+        var posB = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
         Matrix saveMatrix = mModel.transform;
-        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Position, .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
+        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Raymath.Vector3Lerp(posA, posB, t), .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
         mModel.transform = saveMatrix;
     }
 }
@@ -268,7 +277,6 @@ struct RoadData {
     public RoadPath* paths;
 }
 struct RoadPath {
-    public StringView piece;
     public EntryExitSide sideA;
     public int numPoints;
     public PathPoint* points;
