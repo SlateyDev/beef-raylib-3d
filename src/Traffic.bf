@@ -37,7 +37,7 @@ public abstract class Car : ModelInstance3D {
         exitSide = nextPointDirection > 0 ? roadData.paths[currentPathIndex].sideB : roadData.paths[currentPathIndex].sideA;
         pointA = roadData.paths[currentPathIndex].points[currentPointIndex];
         pointB = GetNextPoint();
-        Position = Raymath.Vector3Add(currentRoadSegment.Position, pointA.position);
+        Position = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
 
         initialized = true;
     }
@@ -123,6 +123,12 @@ public abstract class Car : ModelInstance3D {
     //             Rotation = .(0, angleY, 0);
     //         }
     //     }
+    }
+
+    public override void Draw() {
+        Matrix saveMatrix = mModel.transform;
+        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Position, .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
+        mModel.transform = saveMatrix;
     }
 }
 
