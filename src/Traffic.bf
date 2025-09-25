@@ -16,7 +16,7 @@ public abstract class Car : ModelInstance3D {
 
     private PathPoint pointA;
     private PathPoint pointB;
-    private float t = 0;
+    private float pointLerpAmount = 0;
 
     private bool initialized = false;
 
@@ -39,6 +39,56 @@ public abstract class Car : ModelInstance3D {
 
         initialized = true;
     }
+
+    // Find a position on a curved path
+    // Currently doesn't return anything useful, was converted from my odin project
+    private Vector3 GetPositionOnPath(PathPoint pointA, PathPoint pointB, int curveSegments, float pointDistance, float lerpAmount) {
+        if (pointA.position == pointB.position) {
+            return pointA.position;
+        }
+
+        float step = 1 / curveSegments;
+        float currentLength = 0;
+        float nextPointLength = 0;
+        Vector3 currentSegmentPoint = pointA.position;
+        Vector3 lastSegmentPoint = .{};
+
+        for (int i = 1; i <= curveSegments; i++) {
+            float t = step * i;
+
+            float a = Math.Pow(1 - t, 3);
+            float b = 3 * Math.Pow(1 - t, 2) * t;
+            float c = 3 * (1 - t) * Math.Pow(t, 2);
+            float d = Math.Pow(t, 3);
+
+            lastSegmentPoint = currentSegmentPoint;
+            Vector3 outVec = pointA.outVector ?? pointA.position; // fall back if null
+            Vector3 inVec = pointB.inVector ?? pointB.position;   // fall back if null
+            currentSegmentPoint = Raymath.Vector3Add(
+                Raymath.Vector3Add(
+                    Raymath.Vector3Add(
+                        MathUtils.Vector3Multiply(a, pointA.position),
+                        MathUtils.Vector3Multiply(b, outVec)
+                    ),
+                    MathUtils.Vector3Multiply(c, inVec)
+                ),
+                MathUtils.Vector3Multiply(d, pointB.position)
+            );
+            float segmentLength = Raymath.Vector3Length(Raymath.Vector3Subtract(currentSegmentPoint, lastSegmentPoint));
+
+            while (currentLength + segmentLength >= nextPointLength) {
+                Vector3 point = Raymath.Vector3Lerp(lastSegmentPoint, currentSegmentPoint, (nextPointLength - currentLength) / segmentLength);
+                //rl.DrawCircleV(point, 20, rl.BLUE)
+
+                nextPointLength += pointDistance;
+            }
+
+            currentLength += segmentLength;
+        }
+
+        return currentSegmentPoint;
+    }
+
 
     private void GetNextPoint() {
         if (currentRoadSegment == null)
@@ -85,7 +135,6 @@ public abstract class Car : ModelInstance3D {
                     break;
                 }
             }
-            return;
         } else {
             nextRoadSegment = currentRoadSegment;
             pointB = path.points[currentPointIndex];
@@ -98,35 +147,21 @@ public abstract class Car : ModelInstance3D {
             return;
         }
 
-        t += deltaTime;
-        if (t >= 1) {
+        pointLerpAmount += deltaTime;
+        if (pointLerpAmount >= 1) {
             currentRoadSegment = nextRoadSegment;
             pointA = pointB;
             GetNextPoint();
-            t = 0;
+            pointLerpAmount = 0;
+
+            // Set rotation to face direction of pointA to pointB
+            Vector3 direction = Raymath.Vector3Subtract(Raymath.Vector3Add(nextRoadSegment.Position, pointB.position), Raymath.Vector3Add(currentRoadSegment.Position, pointA.position));
+            if (Raymath.Vector3Length(direction) > 0.001f) {
+                direction = Raymath.Vector3Normalize(direction);
+                float angleY = Math.Atan2(direction.x, direction.z) * Raymath.RAD2DEG;
+                Rotation = .(0, angleY, 0);
+            }
         }
-    //AI's bad guess (might be useful?)
-    //     if (currentRoadSegment == null)
-    //         return;
-
-    //     t += deltaTime * 0.1f; // Adjust speed as needed
-    //     if (t > 1.0f) {
-    //         t = 1.0f;
-    //     }
-
-    //     Vector3 newPos = RoadConnections.Evaluate(currentRoadSegment.GetRoadData().paths[0], t);
-    //     Position = newPos;
-
-    //     // Optional: Update rotation based on direction of movement
-    //     if (t < 1.0f) {
-    //         Vector3 nextPos = RoadConnections.Evaluate(currentRoadSegment.GetRoadData().paths[0], Math.Min(t + 0.01f, 1.0f));
-    //         Vector3 direction = Raymath.Vector3Subtract(nextPos, newPos);
-    //         if (Raymath.Vector3Length(direction) > 0.001f) {
-    //             direction = Raymath.Vector3Normalize(direction);
-    //             float angleY = Math.Atan2(direction.x, direction.z) * (180.0f / Math.PI_f);
-    //             Rotation = .(0, angleY, 0);
-    //         }
-    //     }
     }
 
     public override void Draw() {
@@ -136,7 +171,7 @@ public abstract class Car : ModelInstance3D {
         var posA = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
         var posB = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
         Matrix saveMatrix = mModel.transform;
-        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Raymath.Vector3Lerp(posA, posB, t), .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
+        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Raymath.Vector3Lerp(posA, posB, pointLerpAmount), .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
         mModel.transform = saveMatrix;
     }
 }
