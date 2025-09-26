@@ -123,8 +123,8 @@ public abstract class Car : ModelInstance3D {
 
         var p0 = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
         var p3 = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
-        var p1off = (currentSegmentDirection > 0 ? pointA.outVector : pointA.inVector) ?? .(0,0,0);
-        var p2off = (currentSegmentDirection > 0 ? pointB.inVector : pointB.outVector) ?? .(0,0,0);
+        var p1off = Raymath.Vector3Multiply((currentSegmentDirection > 0 ? pointA.outVector : pointA.inVector) ?? .(0,0,0), currentRoadSegment.Scale);
+        var p2off = Raymath.Vector3Multiply((currentSegmentDirection > 0 ? pointB.inVector : pointB.outVector) ?? .(0,0,0), nextRoadSegment.Scale);
 
         Vector3 carPosition = .(0,0,0);
 
@@ -132,8 +132,8 @@ public abstract class Car : ModelInstance3D {
             // No control points, just do linear interpolation
             carPosition = Raymath.Vector3Lerp(p0, p3, pointLerpAmount);
         } else {
-            var p1 = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(p1off, currentRoadSegment.Scale));
-            var p2 = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(p2off, nextRoadSegment.Scale));
+            var p1 = Raymath.Vector3Add(p0, p1off);
+            var p2 = Raymath.Vector3Add(p3, p2off);
             carPosition = MathUtils.GetPositionOnPath(p0, p1, p2, p3, pointLerpAmount);
         }
 
@@ -311,8 +311,8 @@ public class RoadCornerSE : Road {
 
     static PathPoint[?] points = .(
         .(.( 0.0f, 0, 0.9f), null, null),
-        .(.( 0.0f, 0, 0.5f), null, .(0, 0, 0.36f)),
-        .(.( 0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
+        .(.( 0.0f, 0, 0.5f), null, .(0, 0, -0.36f)),
+        .(.( 0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
         .(.( 0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
@@ -341,8 +341,8 @@ public class RoadCornerSW : Road {
 
     static PathPoint[?] points = .(
         .(.( 0.0f, 0, 0.9f), null, null),
-        .(.( 0.0f, 0, 0.5f), null, .(0, 0, 0.36f)),
-        .(.(-0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
+        .(.( 0.0f, 0, 0.5f), null, .(0, 0, -0.36f)),
+        .(.(-0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
         .(.(-0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
@@ -371,8 +371,8 @@ public class RoadCornerNW : Road {
 
     static PathPoint[?] points = .(
         .(.( 0.0f, 0, -0.9f), null, null),
-        .(.( 0.0f, 0, -0.5f), null, .(0, 0, -0.36f)),
-        .(.(-0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
+        .(.( 0.0f, 0, -0.5f), null, .(0, 0, 0.36f)),
+        .(.(-0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
         .(.(-0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
@@ -401,8 +401,8 @@ public class RoadCornerNE : Road {
 
     static PathPoint[?] points = .(
         .(.( 0.0f, 0, -0.9f), null, null),
-        .(.( 0.0f, 0, -0.5f), null, .(0, 0, -0.36f)),
-        .(.( 0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
+        .(.( 0.0f, 0, -0.5f), null, .(0, 0, 0.36f)),
+        .(.( 0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
         .(.( 0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
