@@ -24,7 +24,7 @@ uniform vec4 ambient;
 uniform vec3 viewPos;
 
 // Input shadowmapping values
-#define NUM_CASCADES 3
+#define NUM_CASCADES 4
 uniform mat4 lightVP[NUM_CASCADES];
 uniform sampler2D shadowMap[NUM_CASCADES];
 uniform float cascadeSplits[NUM_CASCADES + 1];
@@ -32,10 +32,14 @@ uniform float cascadeSplits[NUM_CASCADES + 1];
 const vec3 myColors[NUM_CASCADES] = vec3[](
     vec3(1.0, 0.0, 0.0), // Red
     vec3(1.0, 1.0, 0.0), // Yellow
-    vec3(0.0, 0.0, 1.0)  // Blue
+    vec3(0.0, 0.0, 1.0), // Blue
+    vec3(1.0, 0.0, 1.0) // Magenta
 );
 
 uniform int shadowMapResolution;
+
+// Add this uniform for controlling blend zone size
+uniform float cascadeBlendWidth = 0.1;
 
 float SampleShadow(int cascade) {
     // Shadow calculations
@@ -57,23 +61,27 @@ float SampleShadow(int cascade) {
     // Slope-scale depth bias: depth biasing reduces "shadow acne" artifacts, where dark stripes appear all over the scene.
     // The solution is adding a small bias to the depth
     // In this case, the bias is proportional to the slope of the surface, relative to the light
-    float bias = max(0.0002 * (1.0 - dot(normal, l)), 0.00002) + 0.00001;
+    float bias = max(0.0004 * (1.0 - dot(normal, l)), 0.00004);
 
-    int shadowCounter = 0;
-    const int numSamples = 9;
+    // Increased kernel size for better blurring (5x5 instead of 3x3)
+    const int kernelSize = 1;
+    const float weightTotal = (kernelSize * 2 + 1) * (kernelSize * 2 + 1);
+    float shadow = 0;
 
     // PCF (percentage-closer filtering) algorithm:
     // Instead of testing if just one point is closer to the current point,
     // we test the surrounding points as well.
     // This blurs shadow edges, hiding aliasing artifacts.
     vec2 texelSize = vec2(1.0 / float(shadowMapResolution));
-    for (int x = -1; x <= 1; x++) {
-        for (int y = -1; y <= 1; y++) {
-            float sampleDepth = texture(shadowMap[cascade], sampleCoords + texelSize * vec2(x, y)).r;
-            if (curDepth - bias > sampleDepth) shadowCounter++;
+    for (int x = -kernelSize; x <= kernelSize; x++) {
+        for (int y = -kernelSize; y <= kernelSize; y++) {
+            vec2 offset = vec2(x, y) * texelSize;
+            float weight = (1.0 - length(offset) * 0.5); // Weight drops off with distance
+            float sampleDepth = texture(shadowMap[cascade], sampleCoords + offset).r;
+            if (curDepth - bias > sampleDepth) shadow += weight;
         }
     }
-    return float(shadowCounter) / float(numSamples);
+    return shadow / weightTotal;
 }
 
 void main()
@@ -104,13 +112,40 @@ void main()
     vec4 fragPosViewSpace = view * vec4(fragPosition, 1.0);
     float depthValue = abs(fragPosViewSpace.z);
 
-    int cascade = 0;
-    for (int i = 0; i < NUM_CASCADES; i++) {
-        if (depthValue > cascadeSplits[i + 1]) cascade = i + 1;
-    }
+    if (depthValue < cascadeSplits[NUM_CASCADES - 1]) {
+        // Find cascade and calculate blend factor
+        int cascade = NUM_CASCADES - 1; // Default to last cascade
+        float blendFactor = 0.0;
+        
+        // Check all but last cascade
+        for (int i = 0; i < NUM_CASCADES - 1; i++) {
+            float splitStart = cascadeSplits[i];
+            float splitEnd = cascadeSplits[i + 1];
+            
+            if (depthValue < splitEnd) {
+                cascade = i;
+                float splitDistance = splitEnd - splitStart;
+                float blendZone = splitDistance * cascadeBlendWidth;
+                
+                // Calculate blend factor if we're in the blend zone
+                if (depthValue > splitEnd - blendZone) {
+                    blendFactor = (depthValue - (splitEnd - blendZone)) / blendZone;
+                    blendFactor = smoothstep(0.0, 1.0, blendFactor);
+                }
+                break;
+            }
+        }
 
-    float shadow = SampleShadow(cascade);
-    finalColor = mix(finalColor, vec4(0, 0, 0, 1), float(shadow));
+        // Sample current and next cascade
+        float shadow = SampleShadow(cascade);
+        if (blendFactor > 0.0 && cascade < NUM_CASCADES - 1) {
+            float nextShadow = SampleShadow(cascade + 1);
+            shadow = mix(shadow, nextShadow, blendFactor);
+        }
+
+        finalColor = mix(finalColor, vec4(0, 0, 0, 1), float(shadow));
+
+    }
     //finalColor *= vec4(myColors[cascade], 1);
 
     // Add ambient lighting whether in shadow or not

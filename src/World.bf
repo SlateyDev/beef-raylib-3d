@@ -19,16 +19,16 @@ class World {
     private int32 lightDirLoc = 0;
     private int32 locSplits = 0;
 
-    const int32 SHADOWMAP_RESOLUTION = 2048;
-    const int32 NUM_CASCADES = 3;
+    const int32 SHADOWMAP_RESOLUTION = 4096;
+    const int32 NUM_CASCADES = 4;
     public const float CULL_DISTANCE_NEAR = 0.05f;
     public const float CULL_DISTANCE_FAR = 1000;
 
     private RenderTexture2D[NUM_CASCADES] shadowMaps;
     private Matrix[NUM_CASCADES] lightViews;
     private Matrix[NUM_CASCADES] lightProjs;
-    private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR);
-    private int32[NUM_CASCADES] lightVPLocs = .(0,0,0);
+    private float[NUM_CASCADES+1] cascadeSplits = .(CULL_DISTANCE_NEAR, 0.004f * CULL_DISTANCE_FAR, 0.01f * CULL_DISTANCE_FAR, 1f * CULL_DISTANCE_FAR, CULL_DISTANCE_FAR);
+    private int32[NUM_CASCADES] lightVPLocs = .(0,0,0,0);
 
     private Dictionary<GridPos, Road> roadTiles = new Dictionary<GridPos, Road>() ~ delete _;
     private List<Car> cars = new .() ~ delete _;
@@ -186,7 +186,7 @@ class World {
     }
 
     void NewUpdateCascades(Camera3D camera) {
-        float lambda = 0.9f;
+        float lambda = 0.95f;
         float zPadding = 30.0f;
 
         float aspect = (float)Raylib.GetScreenWidth() / (float)Raylib.GetScreenHeight();
