@@ -14,6 +14,7 @@ public abstract class Car : ModelInstance3D {
 
     private EntryExitSide exitSide;
 
+    private Vector3 LastPosition;
     private PathPoint pointA;
     private PathPoint pointB;
     private float pointLerpAmount = 0;
@@ -33,62 +34,21 @@ public abstract class Car : ModelInstance3D {
         currentPointIndex = 0;//rand.Next(0, roadData.paths[currentPathIndex].numPoints);
         currentSegmentDirection = rand.Next(0, 2) == 0 ? 1 : -1;
         exitSide = currentSegmentDirection > 0 ? roadData.paths[currentPathIndex].sideB : roadData.paths[currentPathIndex].sideA;
-        pointA = roadData.paths[currentPathIndex].points[currentPointIndex];
-        GetNextPoint();
+        pointA = currentPointIndex > (roadData.paths[currentPathIndex].numPoints - 1) ? .{} : roadData.paths[currentPathIndex].points[currentPointIndex];
         Position = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
+        LastPosition = Position;
+        GetNextPoint();
+
+        // Set rotation to face direction of pointA to pointB
+        Vector3 direction = Raymath.Vector3Subtract(Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale)), Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale)));
+        if (Raymath.Vector3Length(direction) > 0.0001f) {
+            direction = Raymath.Vector3Normalize(direction);
+            float angleY = Math.Atan2(direction.x, direction.z) * Raymath.RAD2DEG;
+            Rotation = .(0, angleY, 0);
+        }
 
         initialized = true;
     }
-
-    // Find a position on a curved path
-    // Currently doesn't return anything useful, was converted from my odin project
-    private Vector3 GetPositionOnPath(PathPoint pointA, PathPoint pointB, int curveSegments, float pointDistance, float lerpAmount) {
-        if (pointA.position == pointB.position) {
-            return pointA.position;
-        }
-
-        float step = 1 / curveSegments;
-        float currentLength = 0;
-        float nextPointLength = 0;
-        Vector3 currentSegmentPoint = pointA.position;
-        Vector3 lastSegmentPoint = .{};
-
-        for (int i = 1; i <= curveSegments; i++) {
-            float t = step * i;
-
-            float a = Math.Pow(1 - t, 3);
-            float b = 3 * Math.Pow(1 - t, 2) * t;
-            float c = 3 * (1 - t) * Math.Pow(t, 2);
-            float d = Math.Pow(t, 3);
-
-            lastSegmentPoint = currentSegmentPoint;
-            Vector3 outVec = pointA.outVector ?? pointA.position; // fall back if null
-            Vector3 inVec = pointB.inVector ?? pointB.position;   // fall back if null
-            currentSegmentPoint = Raymath.Vector3Add(
-                Raymath.Vector3Add(
-                    Raymath.Vector3Add(
-                        MathUtils.Vector3Multiply(a, pointA.position),
-                        MathUtils.Vector3Multiply(b, outVec)
-                    ),
-                    MathUtils.Vector3Multiply(c, inVec)
-                ),
-                MathUtils.Vector3Multiply(d, pointB.position)
-            );
-            float segmentLength = Raymath.Vector3Length(Raymath.Vector3Subtract(currentSegmentPoint, lastSegmentPoint));
-
-            while (currentLength + segmentLength >= nextPointLength) {
-                Vector3 point = Raymath.Vector3Lerp(lastSegmentPoint, currentSegmentPoint, (nextPointLength - currentLength) / segmentLength);
-                //rl.DrawCircleV(point, 20, rl.BLUE)
-
-                nextPointLength += pointDistance;
-            }
-
-            currentLength += segmentLength;
-        }
-
-        return currentSegmentPoint;
-    }
-
 
     private void GetNextPoint() {
         if (currentRoadSegment == null)
@@ -153,14 +113,6 @@ public abstract class Car : ModelInstance3D {
             pointA = pointB;
             GetNextPoint();
             pointLerpAmount = 0;
-
-            // Set rotation to face direction of pointA to pointB
-            Vector3 direction = Raymath.Vector3Subtract(Raymath.Vector3Add(nextRoadSegment.Position, pointB.position), Raymath.Vector3Add(currentRoadSegment.Position, pointA.position));
-            if (Raymath.Vector3Length(direction) > 0.001f) {
-                direction = Raymath.Vector3Normalize(direction);
-                float angleY = Math.Atan2(direction.x, direction.z) * Raymath.RAD2DEG;
-                Rotation = .(0, angleY, 0);
-            }
         }
     }
 
@@ -168,10 +120,36 @@ public abstract class Car : ModelInstance3D {
         if (!initialized) {
             return;
         }
-        var posA = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
-        var posB = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
+
+        var p0 = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
+        var p3 = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
+        var p1off = (currentSegmentDirection > 0 ? pointA.outVector : pointA.inVector) ?? .(0,0,0);
+        var p2off = (currentSegmentDirection > 0 ? pointB.inVector : pointB.outVector) ?? .(0,0,0);
+
+        Vector3 carPosition = .(0,0,0);
+
+        if (p1off == p2off) {
+            // No control points, just do linear interpolation
+            carPosition = Raymath.Vector3Lerp(p0, p3, pointLerpAmount);
+        } else {
+            var p1 = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(p1off, currentRoadSegment.Scale));
+            var p2 = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(p2off, nextRoadSegment.Scale));
+            carPosition = MathUtils.GetPositionOnPath(p0, p1, p2, p3, pointLerpAmount);
+        }
+
+        // // Set rotation to face direction of pointA to pointB
+        Vector3 direction = Raymath.Vector3Subtract(carPosition, LastPosition);
+        if (Raymath.Vector3Length(direction) > 0.0001f) {
+            direction = Raymath.Vector3Normalize(direction);
+            float angleY = Math.Atan2(direction.x, direction.z) * Raymath.RAD2DEG;
+            Rotation = .(0, angleY, 0);
+        }
+
+        LastPosition = carPosition;
+
         Matrix saveMatrix = mModel.transform;
-        Raylib.DrawModelEx(mModel, Raymath.Vector3Add(Raymath.Vector3Lerp(posA, posB, pointLerpAmount), .(0.15f,0.06f,0)), Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
+        mModel.transform = Raymath.MatrixMultiply(mModel.transform, Raymath.MatrixTranslate(0.30f, 0.12f, 0));
+        Raylib.DrawModelEx(mModel, carPosition, Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
         mModel.transform = saveMatrix;
     }
 }
@@ -332,10 +310,10 @@ public class RoadCornerSE : Road {
     }
 
     static PathPoint[?] points = .(
-        .(.( 0.0f, 0, 0.9f), null, .(0, 0, 0)),
-        .(.( 0.0f, 0, 0.5f), .(0, 0, 0), .(0, 0, -0.36f)),
-        .(.( 0.5f, 0, 0.0f), .(-0.36f, 0, 0), .(0, 0, 0)),
-        .(.( 0.9f, 0, 0.0f), .(0, 0, 0), null),
+        .(.( 0.0f, 0, 0.9f), null, null),
+        .(.( 0.0f, 0, 0.5f), null, .(0, 0, 0.36f)),
+        .(.( 0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
+        .(.( 0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
         .{
@@ -362,10 +340,10 @@ public class RoadCornerSW : Road {
     }
 
     static PathPoint[?] points = .(
-        .(.( 0.0f, 0, 0.9f), null, .(0, 0, 0)),
-        .(.( 0.0f, 0, 0.5f), .(0, 0, 0), .(0, 0, -0.36f)),
-        .(.(-0.5f, 0, 0.0f), .(0.36f, 0, 0), .(0, 0, 0)),
-        .(.(-0.9f, 0, 0.0f), .(0, 0, 0), null),
+        .(.( 0.0f, 0, 0.9f), null, null),
+        .(.( 0.0f, 0, 0.5f), null, .(0, 0, 0.36f)),
+        .(.(-0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
+        .(.(-0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
         .{
@@ -392,10 +370,10 @@ public class RoadCornerNW : Road {
     }
 
     static PathPoint[?] points = .(
-        .(.( 0.0f, 0, -0.9f), null, .(0, 0, 0)),
-        .(.( 0.0f, 0, -0.5f), .(0, 0, 0), .(0, 0, 0.36f)),
-        .(.(-0.5f, 0, 0.0f), .(0.36f, 0, 0), .(0, 0, 0)),
-        .(.(-0.9f, 0, 0.0f), .(0, 0, 0), null),
+        .(.( 0.0f, 0, -0.9f), null, null),
+        .(.( 0.0f, 0, -0.5f), null, .(0, 0, -0.36f)),
+        .(.(-0.5f, 0, 0.0f), .(-0.36f, 0, 0), null),
+        .(.(-0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
         .{
@@ -422,10 +400,10 @@ public class RoadCornerNE : Road {
     }
 
     static PathPoint[?] points = .(
-        .(.( 0.0f, 0, -0.9f), null, .(0, 0, 0)),
-        .(.( 0.0f, 0, -0.5f), .(0, 0, 0), .(0, 0, 0.36f)),
-        .(.( 0.5f, 0, 0.0f), .(-0.36f, 0, 0), .(0, 0, 0)),
-        .(.( 0.9f, 0, 0.0f), .(0, 0, 0), null),
+        .(.( 0.0f, 0, -0.9f), null, null),
+        .(.( 0.0f, 0, -0.5f), null, .(0, 0, -0.36f)),
+        .(.( 0.5f, 0, 0.0f), .(0.36f, 0, 0), null),
+        .(.( 0.9f, 0, 0.0f), null, null),
     );
     static RoadPath[?] roadPaths = .(
         .{

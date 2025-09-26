@@ -535,35 +535,29 @@ class World {
         AddRoadTile(new RoadStraightEW(), .(3, 0, -2));
         AddRoadTile(new RoadStraightEW(), .(2, 0, -2));
 
-        var t = roadTiles[.(5, 0, -2)];
-        let td = t.GetRoadData();
-        for (var pathIndex = 0; pathIndex < td.numPaths; pathIndex++) {
-            let path = td.paths[pathIndex];
-            for (var pointIndex = 0; pointIndex < path.numPoints; pointIndex++) {
-                let point = path.points[pointIndex];
-                modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/box_A.gltf"));
-                modelInstance.Position = Raymath.Vector3Add(t.Position, Raymath.Vector3Multiply(point.position, t.Scale));
-                modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-                mModelInstances.Add(modelInstance);
-            }
-        }
-
-        CarTaxi taxi = new CarTaxi();
+        var taxi = new CarTaxi();
         mModelInstances.Add(taxi);
         cars.Add(taxi);
         taxi.currentRoadSegment = roadTiles[.(1, 0, -2)];
         taxi.Start();
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_sedan.gltf"));
-        modelInstance.Position = .(1 - 0.15f, 0.06f, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 180, 0);
-        mModelInstances.Add(modelInstance);
+        var stationWagon = new CarStationWagon();
+        mModelInstances.Add(stationWagon);
+        cars.Add(stationWagon);
+        stationWagon.currentRoadSegment = roadTiles[.(5, 0, -2)];
+        stationWagon.Start();
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/car_police.gltf"));
-        modelInstance.Position = .(1 + 0.15f, 0.06f, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        mModelInstances.Add(modelInstance);
+        var police = new CarPolice();
+        mModelInstances.Add(police);
+        cars.Add(police);
+        police.currentRoadSegment = roadTiles[.(2, 0, 2)];
+        police.Start();
+
+        var sedan = new CarSedan();
+        mModelInstances.Add(sedan);
+        cars.Add(sedan);
+        sedan.currentRoadSegment = roadTiles[.(5, 0, 0)];
+        sedan.Start();
 
         modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
         modelInstance.Position = .(2, 0, -1);
