@@ -13,7 +13,8 @@ static class MathUtils {
         var tt = t * t;
         var ttt = tt * t;
 
-        Vector3 p = .(0,0,0);
+        Vector3 p;
+
         p.x = uuu * p0.x;
         p.y = uuu * p0.y;
         p.z = uuu * p0.z;
