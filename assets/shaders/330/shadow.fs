@@ -8,9 +8,9 @@ in vec3 fragPosition;
 in vec2 fragTexCoord;
 in vec4 fragColor;
 in vec3 fragNormal;
-in mat4 view;
 
 // Input uniform values
+uniform mat4 matView;
 uniform sampler2D texture0;
 uniform vec4 colDiffuse;
 
@@ -104,12 +104,12 @@ void main()
     if (NdotL > 0.0) specCo = pow(max(0.0, dot(viewD, reflect(-(l), normal))), 16.0); // 16 refers to shine
     specular += specCo;
 
-    finalColor = (texelColor*fragColor*((colDiffuse + vec4(specular, 1.0))*vec4(lightDot, 1.0)));
+    finalColor = (texelColor * fragColor*((colDiffuse + vec4(specular, 1.0)) * vec4(lightDot, 1.0)));
 
     int shadowCounter = 0;
     const int numSamples = 9;
 
-    vec4 fragPosViewSpace = view * vec4(fragPosition, 1.0);
+    vec4 fragPosViewSpace = matView * vec4(fragPosition, 1.0);
     float depthValue = abs(fragPosViewSpace.z);
 
     if (depthValue < cascadeSplits[NUM_CASCADES - 1]) {
@@ -149,8 +149,8 @@ void main()
     //finalColor *= vec4(myColors[cascade], 1);
 
     // Add ambient lighting whether in shadow or not
-    finalColor += texelColor*(ambient/10.0)*colDiffuse;
+    finalColor += texelColor * (ambient / 10.0) * colDiffuse;
 
     // Gamma correction
-    finalColor = pow(finalColor, vec4(1.0/2.2));
+    finalColor = pow(finalColor, vec4(1.0 / 2.2));
 }

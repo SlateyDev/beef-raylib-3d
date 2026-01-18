@@ -3,12 +3,11 @@ Dependencies = {corlib = "*", raylib-beef = "*"}
 
 [Project]
 Name = "beef-raylib-3d-game"
-TargetType = "BeefGUIApplication"
 StartupObject = "Program"
 DefaultNamespace = "game"
 
 [Configs.Debug.wasm32]
-OtherLinkFlags = "$(LinkFlags) --preload-file ../../../assets"
+OtherLinkFlags = "$(LinkFlags) -sTOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH=1 --preload-file ../../../assets"
 
 [Configs.Release.wasm32]
-OtherLinkFlags = "$(LinkFlags) --preload-file ../../../assets"
+OtherLinkFlags = "$(LinkFlags) -sTOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH=1 --preload-file ../../../assets"
