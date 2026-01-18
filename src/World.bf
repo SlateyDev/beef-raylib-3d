@@ -8,7 +8,7 @@ class World {
     private int mHeight = 100;
 
     private Camera3D mLightCamera;
-    private Shader mDepthShader;
+    // private Shader mDepthShader;
     private Shader mShadowShader;
     private Matrix mLightSpaceMatrix;
     private Vector3 lightDir = Raymath.Vector3Normalize(.( 0.35f, -1.0f, -0.25f ));
@@ -39,23 +39,24 @@ class World {
         //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
-//#if BF_PLATFORM_WASM
-        char8* vsDepthShaderFile = "assets/shaders/100/depthPack.vs";
-        char8* fsDepthShaderFile = "assets/shaders/100/depthPack.fs";
-
-        char8* vsShaderFile = "assets/shaders/100/shadow.vs";
-        char8* fsShaderFile = "assets/shaders/100/shadow.fs";
-///#else
-//        char8* vsShaderFile = "assets/shaders/330/shadow.vs";
-//        char8* fsShaderFile = "assets/shaders/330/shadow.fs";
-//#endif
+#if BF_PLATFORM_WASM
+    //    char8* vsDepthShaderFile = "assets/shaders/100/depthPack.vs";
+    //    char8* fsDepthShaderFile = "assets/shaders/100/depthPack.fs";
+    //    char8* vsShaderFile = "assets/shaders/100/shadow.vs";
+    //    char8* fsShaderFile = "assets/shaders/100/shadow.fs";
+        char8* vsShaderFile = "assets/shaders/300_es/shadow.vs";
+        char8* fsShaderFile = "assets/shaders/300_es/shadow.fs";
+#else
+        char8* vsShaderFile = "assets/shaders/330/shadow.vs";
+        char8* fsShaderFile = "assets/shaders/330/shadow.fs";
+#endif
         
         // Initialize shadow mapping resources
         for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
             shadowMaps[cascade_index] = LoadShadowmapRenderTexture(SHADOWMAP_RESOLUTION, SHADOWMAP_RESOLUTION);
         }
 
-        mDepthShader = Raylib.LoadShader(vsDepthShaderFile, fsDepthShaderFile);
+        // mDepthShader = Raylib.LoadShader(vsDepthShaderFile, fsDepthShaderFile);
         mShadowShader = Raylib.LoadShader(vsShaderFile, fsShaderFile);
 
         ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW] = Raylib.GetShaderLocation(mShadowShader, "viewPos");
@@ -72,6 +73,8 @@ class World {
         shadowMapLoc = Raylib.GetShaderLocation(mShadowShader, "shadowMap");
         int32 shadowMapResolution = SHADOWMAP_RESOLUTION;
         Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "shadowMapResolution"), &shadowMapResolution, ShaderUniformDataType.SHADER_UNIFORM_INT);
+        float cascadeBlendResolution = 0.1f;
+        Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "cascadeBlendWidth"), &cascadeBlendResolution, ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
         locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
         Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
 
@@ -90,7 +93,7 @@ class World {
         for (var cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
             UnloadShadowmapRenderTexture(shadowMaps[cascade_index]);
         }
-        Raylib.UnloadShader(mDepthShader);
+        // Raylib.UnloadShader(mDepthShader);
         Raylib.UnloadShader(mShadowShader);
     }
 
@@ -281,7 +284,8 @@ class World {
     }
 
     private void RenderSceneForShadow(Camera3D playerCamera) {
-        ModelManager.UpdateModelShaders(mDepthShader);
+        // ModelManager.UpdateModelShaders(mDepthShader);
+        ModelManager.UpdateModelShaders(mShadowShader);
         NewUpdateCascades(playerCamera);
 
         Rlgl.rlDisableColorBlend();
@@ -292,11 +296,11 @@ class World {
             lightProj = lightProjs[cascade_index];
             CustomBeginMode3D(lightProj, lightView);
 
-            Raylib.BeginShaderMode(mDepthShader);
-            // Draw floor
-            //Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
-            //DrawCubes(Raylib.BLACK);
-            Raylib.EndShaderMode();
+            // // Raylib.BeginShaderMode(mDepthShader);
+            // Raylib.BeginShaderMode(mShadowShader);
+            // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
+            // // DrawCubes(Raylib.BLACK);
+            // Raylib.EndShaderMode();
 
             DrawModels();
 
@@ -321,14 +325,13 @@ class World {
         for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
             slot[cascade_index] = 10 + cascade_index; // Can be anything 0 to 15, but 0 will probably be taken up
             Rlgl.rlActiveTextureSlot(slot[cascade_index]);
-            Rlgl.rlEnableTexture(shadowMaps[cascade_index].texture.id);
+            Rlgl.rlEnableTexture(shadowMaps[cascade_index].depth.id);
         }
         Rlgl.rlSetUniform(shadowMapLoc, &slot[0], ShaderUniformDataType.SHADER_UNIFORM_INT, NUM_CASCADES);
 
         Raylib.BeginMode3D(playerCamera);
 
         Raylib.BeginShaderMode(mShadowShader);
-        // Draw floor
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
         //DrawCubes(Raylib.WHITE);
         Raylib.EndShaderMode();
@@ -336,6 +339,12 @@ class World {
         DrawModels();
 
         Raylib.EndMode3D();
+
+        for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
+            slot[cascade_index] = 10 + cascade_index; // Can be anything 0 to 15, but 0 will probably be taken up
+            Rlgl.rlActiveTextureSlot(slot[cascade_index]);
+            Rlgl.rlDisableTexture();
+        }
     }
 
     private void DrawCubes(Color color) {
@@ -353,19 +362,15 @@ class World {
         RenderTexture2D target = .{ id = 0 };
     
         target.id = Rlgl.rlLoadFramebuffer(); // Load an empty framebuffer
-        target.texture.width = width;
-        target.texture.height = height;
     
         if (target.id > 0) {
             Rlgl.rlEnableFramebuffer(target.id);
     
-            // Create depth texture
-            // We don't need a color texture for the shadowmap
-            target.texture.id = Rlgl.rlLoadTexture(null, width, height, 7, 1);
+            // target.texture.id = Rlgl.rlLoadTexture(null, width, height, PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8, 1);
             target.texture.width = width;
             target.texture.height = height;
-            target.texture.format = 7;
-            target.texture.mipmaps = 1;
+            // target.texture.format = PixelFormat.PIXELFORMAT_UNCOMPRESSED_R8G8B8A8;
+            // target.texture.mipmaps = 1;
 
             target.depth.id = Rlgl.rlLoadTextureDepth(width, height, false);
             target.depth.width = width;
@@ -373,7 +378,7 @@ class World {
             target.depth.format = 19;       //DEPTH_COMPONENT_24BIT?
             target.depth.mipmaps = 1;
     
-            Rlgl.rlFramebufferAttach(target.id, target.texture.id, rlFramebufferAttachType.RL_ATTACHMENT_COLOR_CHANNEL0, rlFramebufferAttachTextureType.RL_ATTACHMENT_TEXTURE2D, 0);
+            // Rlgl.rlFramebufferAttach(target.id, target.texture.id, rlFramebufferAttachType.RL_ATTACHMENT_COLOR_CHANNEL0, rlFramebufferAttachTextureType.RL_ATTACHMENT_TEXTURE2D, 0);
             Rlgl.rlFramebufferAttach(target.id, target.depth.id, rlFramebufferAttachType.RL_ATTACHMENT_DEPTH, rlFramebufferAttachTextureType.RL_ATTACHMENT_TEXTURE2D, 0);
 
             // Check if fbo is complete with attachments (valid)
