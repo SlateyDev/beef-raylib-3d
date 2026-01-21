@@ -48,6 +48,8 @@ public abstract class Car : ModelInstance3D {
         }
 
         initialized = true;
+
+        mModel.transform = Raymath.MatrixMultiply(mModel.transform, Raymath.MatrixTranslate(0.30f, 0.12f, 0));
     }
 
     private void GetNextPoint() {
@@ -114,44 +116,31 @@ public abstract class Car : ModelInstance3D {
             GetNextPoint();
             pointLerpAmount = 0;
         }
-    }
-
-    public override void Draw() {
-        if (!initialized) {
-            return;
-        }
 
         var p0 = Raymath.Vector3Add(currentRoadSegment.Position, Raymath.Vector3Multiply(pointA.position, currentRoadSegment.Scale));
         var p3 = Raymath.Vector3Add(nextRoadSegment.Position, Raymath.Vector3Multiply(pointB.position, nextRoadSegment.Scale));
         var p1off = Raymath.Vector3Multiply((currentSegmentDirection > 0 ? pointA.outVector : pointA.inVector) ?? .(0,0,0), currentRoadSegment.Scale);
         var p2off = Raymath.Vector3Multiply((currentSegmentDirection > 0 ? pointB.inVector : pointB.outVector) ?? .(0,0,0), nextRoadSegment.Scale);
 
-        Vector3 carPosition = .(0,0,0);
-
         if (p1off == p2off) {
             // No control points, just do linear interpolation
-            carPosition = Raymath.Vector3Lerp(p0, p3, pointLerpAmount);
+            Position = Raymath.Vector3Lerp(p0, p3, pointLerpAmount);
         } else {
             var p1 = Raymath.Vector3Add(p0, p1off);
             var p2 = Raymath.Vector3Add(p3, p2off);
-            carPosition = MathUtils.GetPositionOnPath(p0, p1, p2, p3, pointLerpAmount);
+            Position = MathUtils.GetPositionOnPath(p0, p1, p2, p3, pointLerpAmount);
         }
 
         // // Set rotation to face direction of pointA to pointB
-        Vector3 direction = Raymath.Vector3Subtract(carPosition, LastPosition);
+        Vector3 direction = Raymath.Vector3Subtract(Position, LastPosition);
         if (Raymath.Vector3Length(direction) > 0.0001f) {
             direction = Raymath.Vector3Normalize(direction);
             float angleY = Math.Atan2(direction.x, direction.z) * Raymath.RAD2DEG;
             Rotation = .(0, angleY, 0);
         }
 
-        LastPosition = carPosition;
-
-        Matrix saveMatrix = mModel.transform;
-        mModel.transform = Raymath.MatrixMultiply(mModel.transform, Raymath.MatrixTranslate(0.30f, 0.12f, 0));
-        Raylib.DrawModelEx(mModel, carPosition, Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
-        mModel.transform = saveMatrix;
-    }
+        LastPosition = Position;
+    }    
 }
 
 public class CarHatchBack : Car {

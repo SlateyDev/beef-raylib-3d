@@ -17,7 +17,7 @@ class Game {
 
     public void Start() {
         // Initialize game resources
-        mPlayer = new Player(.(1.0f, 1.0f, 0.0f)); // Position player slightly above the floor
+        mPlayer = new Player(.(-5.0f, 1.0f, 0.0f)); // Position player slightly above the floor
         mWorld = new World();
         mWorld.LoadLevel("");
     }

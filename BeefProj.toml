@@ -1,5 +1,5 @@
 FileVersion = 1
-Dependencies = {corlib = "*", raylib-beef = "*"}
+Dependencies = {corlib = "*", raylib-beef = "*", Jolt = "*"}
 
 [Project]
 Name = "beef-raylib-3d-game"
@@ -7,7 +7,7 @@ StartupObject = "Program"
 DefaultNamespace = "game"
 
 [Configs.Debug.wasm32]
-OtherLinkFlags = "$(LinkFlags) -sFULL_ES3=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sTOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH=1 --preload-file ../../../assets"
+OtherLinkFlags = "$(LinkFlags) -sFULL_ES3=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sTOTAL_MEMORY=67108864 -sTOTAL_STACK=16777216 -sALLOW_MEMORY_GROWTH=1 --preload-file ../../../assets"
 
 [Configs.Release.wasm32]
 OtherLinkFlags = "$(LinkFlags) -sFULL_ES3=1 -sMIN_WEBGL_VERSION=2 -sMAX_WEBGL_VERSION=2 -sTOTAL_MEMORY=67108864 -sALLOW_MEMORY_GROWTH=1 --preload-file ../../../assets"

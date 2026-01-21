@@ -1,6 +1,6 @@
 FileVersion = 1
-Projects = {beef-raylib-3d-game = {Path = "."}, raylib-beef = "*"}
-Unlocked = ["raylib-beef"]
+Projects = {beef-raylib-3d-game = {Path = "."}, raylib-beef = "*", Jolt = "*"}
+Unlocked = ["raylib-beef", "Jolt"]
 
 [Workspace]
 StartupProject = "beef-raylib-3d-game"
@@ -9,9 +9,6 @@ StartupProject = "beef-raylib-3d-game"
 AllocType = "CRT"
 EnableObjectDebugFlags = false
 EmitObjectAccessCheck = false
-
-[Configs.Debug.Win64]
-ConfigSelections = {raylib-beef = {Config = "StaticDebug"}}
 
 [Configs.Paranoid.wasm32]
 AllocType = "CRT"

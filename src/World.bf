@@ -1,13 +1,15 @@
 using System;
 using System.Collections;
+using System.Interop;
 using RaylibBeef;
+using Jolt;
+using static Jolt.Jolt;
 
 class World {
     private List<uint8> mLevelData = new .() ~ delete(mLevelData);
     private int mWidth = 100;
     private int mHeight = 100;
 
-    private Camera3D mLightCamera;
     // private Shader mDepthShader;
     private Shader mShadowShader;
     private Matrix mLightSpaceMatrix;
@@ -33,11 +35,124 @@ class World {
     private Dictionary<GridPos, Road> roadTiles = new Dictionary<GridPos, Road>() ~ delete _;
     private List<Car> cars = new .() ~ delete _;
 
+    Frustum cameraFrustum;
+
+    JPH_JobSystem* jobSystem;
+    JPH_PhysicsSystem* system;
+    JPH_BodyInterface* bodyInterface;
+    JPH_BodyID floorId;
+    JPH_BodyID sphereId;
+
+    enum Layers : JPH_ObjectLayer
+    {
+    	NON_MOVING,
+    	MOVING,
+    	NUM_LAYERS
+    };
+
+    enum BroadPhaseLayers : JPH_BroadPhaseLayer
+    {
+    	NON_MOVING,
+    	MOVING,
+    	NUM_LAYERS
+    };
+
     public this() {
         LoadModels();
 
         //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
+
+        JPH_SetTraceHandler((message) => { Console.WriteLine(message); });
+        //JPH_SetAssertFailureHandler((expression, message, file, line) => { Console.WriteLine(message); return false; });
+
+        if (JPH_Init()) {
+            Console.WriteLine("Jolt Initialized!");
+        } else {
+            Console.WriteLine("Jolt failed to initialize!");
+        }
+
+        jobSystem = JPH_JobSystemThreadPool_Create(null);
+        if (jobSystem == null) {
+            Console.WriteLine("Failed to create Jolt job system!");
+        }
+
+        // We use only 2 layers: one for non-moving objects and one for moving objects
+        JPH_ObjectLayerPairFilter* objectLayerPairFilterTable = JPH_ObjectLayerPairFilterTable_Create(Layers.NUM_LAYERS.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.NON_MOVING.Underlying, Layers.MOVING.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.NON_MOVING.Underlying);
+
+        // We use a 1-to-1 mapping between object layers and broadphase layers
+        JPH_BroadPhaseLayerInterface* broadPhaseLayerInterfaceTable = JPH_BroadPhaseLayerInterfaceTable_Create(Layers.NUM_LAYERS.Underlying, BroadPhaseLayers.NUM_LAYERS.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.NON_MOVING.Underlying, BroadPhaseLayers.NON_MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.MOVING.Underlying, BroadPhaseLayers.MOVING.Underlying);
+
+        JPH_ObjectVsBroadPhaseLayerFilter* objectVsBroadPhaseLayerFilter = JPH_ObjectVsBroadPhaseLayerFilterTable_Create(broadPhaseLayerInterfaceTable, BroadPhaseLayers.NUM_LAYERS.Underlying, objectLayerPairFilterTable, Layers.NUM_LAYERS.Underlying);
+
+        JPH_PhysicsSystemSettings settings = .();
+        settings.maxBodies = 65536;
+        settings.numBodyMutexes = 0;
+        settings.maxBodyPairs = 65536;
+        settings.maxContactConstraints = 65536;
+        settings.broadPhaseLayerInterface = broadPhaseLayerInterfaceTable;
+        settings.objectLayerPairFilter = objectLayerPairFilterTable;
+        settings.objectVsBroadPhaseLayerFilter = objectVsBroadPhaseLayerFilter;
+        system = JPH_PhysicsSystem_Create(&settings);
+        bodyInterface = JPH_PhysicsSystem_GetBodyInterface(system);
+
+        floorId = .();
+        {
+        	// Next we can create a rigid body to serve as the floor, we make a large box
+        	// Create the settings for the collision volume (the shape). 
+        	// Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
+        	JPH_Vec3 boxHalfExtents = .(100.0f, 1.0f, 100.0f);
+        	JPH_BoxShape* floorShape = JPH_BoxShape_Create(&boxHalfExtents, JPH_DEFAULT_CONVEX_RADIUS);
+
+        	JPH_Vec3 floorPosition = .(0.0f, -1.0f, 0.0f);
+        	JPH_BodyCreationSettings* floorSettings = JPH_BodyCreationSettings_Create3(
+        		(JPH_Shape*)floorShape,
+        		&floorPosition,
+        		null, // Identity, 
+        		JPH_MotionType.Static,
+        		Layers.NON_MOVING.Underlying);
+
+        	// Create the actual rigid body
+        	floorId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, floorSettings,JPH_Activation.DontActivate);
+        	JPH_BodyCreationSettings_Destroy(floorSettings);
+        }
+
+        // Sphere
+        sphereId = .();
+        {
+        	JPH_SphereShape* sphereShape = JPH_SphereShape_Create(1.0f);
+        	JPH_Vec3 spherePosition = .(0.0f, 5.0f, 0.0f);
+        	JPH_BodyCreationSettings* sphereSettings = JPH_BodyCreationSettings_Create3(
+        		(JPH_Shape*)sphereShape,
+        		&spherePosition,
+        		null, // Identity, 
+        		JPH_MotionType.Dynamic,
+        		Layers.MOVING.Underlying);
+
+        	sphereId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, sphereSettings, JPH_Activation.Activate);
+        	JPH_BodyCreationSettings_Destroy(sphereSettings);
+        }
+
+        // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
+        // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
+        JPH_Vec3 sphereLinearVelocity = .(0.0f, 10f, 0.0f);
+        JPH_BodyInterface_SetLinearVelocity(bodyInterface, sphereId, &sphereLinearVelocity);
+
+        JPH_SixDOFConstraintSettings jointSettings;
+        JPH_SixDOFConstraintSettings_Init(&jointSettings);
+
+        // We simulate the physics world in discrete time steps. 60 Hz is a good rate to update the physics system.
+        const float cDeltaTime = 1.0f / 60.0f;
+
+        // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
+        // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
+        // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
+        JPH_PhysicsSystem_OptimizeBroadPhase(system);
+
 
 #if BF_PLATFORM_WASM
     //    char8* vsDepthShaderFile = "assets/shaders/100/depthPack.vs";
@@ -77,15 +192,6 @@ class World {
         Raylib.SetShaderValue(mShadowShader, Raylib.GetShaderLocation(mShadowShader, "cascadeBlendWidth"), &cascadeBlendResolution, ShaderUniformDataType.SHADER_UNIFORM_FLOAT);
         locSplits = Raylib.GetShaderLocation(mShadowShader, "cascadeSplits");
         Raylib.SetShaderValueV(mShadowShader, locSplits, &cascadeSplits[0], ShaderUniformDataType.SHADER_UNIFORM_FLOAT, NUM_CASCADES + 1);
-
-        // Setup light camera and calculate light space matrix
-        mLightCamera = .(
-            Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position),  // Light position
-            Program.game.mPlayer.Position,     // Looking at center
-            .(0.0f, 1.0f, 0.0f),     // Up vector
-            5.0f,                    // FOV
-            CameraProjection.CAMERA_ORTHOGRAPHIC       // Projection type
-        );
     }
 
     public ~this() {
@@ -101,11 +207,26 @@ class World {
         // For now we'll just create a simple floor
     }
 
+    float physicsTime;
+    float physicsUpdateTime = 1f / 60f;
+    float physicsThreshold = physicsUpdateTime * 1.2f;
+
     public void Update(float frameTime) {
         // Update world state
         for (var modelInstance in mModelInstances) {
             modelInstance.Update(frameTime);
         }
+
+        if (Raylib.IsKeyPressed(.KEY_LEFT_SHIFT)) {
+            JPH_Vec3 sphereLinearVelocity = .(0.0f, 5f, 0.0f);
+            JPH_BodyInterface_SetLinearVelocity(bodyInterface, sphereId, &sphereLinearVelocity);
+        }
+
+        physicsTime = Math.Min(physicsTime + frameTime, physicsThreshold);
+        if (physicsTime + frameTime > physicsUpdateTime) {
+            JPH_PhysicsSystem_Update(system, physicsTime, 1, jobSystem);
+            physicsTime -= physicsUpdateTime;
+        } 
     }
 
     private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
@@ -153,6 +274,37 @@ class World {
         outCorners[5] = Raymath.Vector3Add(Raymath.Vector3Subtract(fc, rtF),  upF);
         outCorners[6] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(fc, upF),  rtF);
         outCorners[7] = Raymath.Vector3Subtract(Raymath.Vector3Add(fc, rtF),  upF);
+    }
+
+    private void SphereInFrustum(Matrix vpMatrix, Vector3 point, float radius) {
+        var projection = Rlgl.rlGetMatrixProjection();
+        var modelView = Rlgl.rlGetMatrixModelview();
+        var viewProjMatrix = Raymath.MatrixMultiply(modelView, projection);
+
+        Vector4 r1 = .(viewProjMatrix.m0, viewProjMatrix.m4, viewProjMatrix.m8, viewProjMatrix.m12);
+        Vector4 r2 = .(viewProjMatrix.m1, viewProjMatrix.m5, viewProjMatrix.m9, viewProjMatrix.m13);
+        Vector4 r3 = .(viewProjMatrix.m2, viewProjMatrix.m6, viewProjMatrix.m10, viewProjMatrix.m14);
+        Vector4 r4 = .(viewProjMatrix.m3, viewProjMatrix.m7, viewProjMatrix.m11, viewProjMatrix.m15);
+
+        float magnitude;
+
+        Vector4 leftPlane = .(r4.x + r1.x, r4.y + r1.y, r4.z + r1.z, r4.w + r1.w);
+        magnitude = Math.Sqrt(leftPlane.x * leftPlane.x + leftPlane.y * leftPlane.y + leftPlane.z * leftPlane.z);
+        leftPlane = .(leftPlane.x / magnitude, leftPlane.y / magnitude, leftPlane.z / magnitude, leftPlane.w / magnitude);
+        Vector4 rightPlane = .(r4.x - r1.x, r4.y - r1.y, r4.z - r1.z, r4.w - r1.w);
+
+        Vector4 bottomPlane = .(r4.x + r2.x, r4.y + r2.y, r4.z + r2.z, r4.w + r2.w);
+        Vector4 topPlane = .(r4.x - r2.x, r4.y - r2.y, r4.z - r2.z, r4.w - r2.w);
+
+        Vector4 nearPlane = .(r4.x + r3.x, r4.y + r3.y, r4.z + r3.z, r4.w + r3.w);
+        Vector4 farPlane = .(r4.x - r3.x, r4.y - r3.y, r4.z - r3.z, r4.w - r3.w);
+
+        var distanceToPlane = leftPlane.x * point.x + leftPlane.y * point.y + leftPlane.z * point.z + leftPlane.w;
+        if (distanceToPlane < -radius) {
+            Console.WriteLine($"False: {distanceToPlane}");
+        } else {
+            Console.WriteLine($"True: {distanceToPlane}");
+        }
     }
 
     private void SnapOrthoToTexels(float* minX, float* maxX, float* minY, float* maxY, int mapSize) {
@@ -251,9 +403,6 @@ class World {
     Matrix lightProj;
 
     public void Render(Camera3D playerCamera) {
-        mLightCamera.position = Raymath.Vector3Add(Raymath.Vector3Scale(lightDir, -15.0f), Program.game.mPlayer.Position);
-        mLightCamera.target = Program.game.mPlayer.Position;
-
         Vector3 cameraPos = playerCamera.position;
         Raylib.SetShaderValue(mShadowShader, ((int32*)mShadowShader.locs)[ShaderLocationIndex.SHADER_LOC_VECTOR_VIEW], &cameraPos, ShaderUniformDataType.SHADER_UNIFORM_VEC3);
 
@@ -295,14 +444,25 @@ class World {
             lightView = lightViews[cascade_index];
             lightProj = lightProjs[cascade_index];
             CustomBeginMode3D(lightProj, lightView);
+            cameraFrustum.Extract();
 
             // // Raylib.BeginShaderMode(mDepthShader);
-            // Raylib.BeginShaderMode(mShadowShader);
+            Raylib.BeginShaderMode(mShadowShader);
+            JPH_RVec3* position = new .(0,0,0);
+            JPH_BodyInterface_GetCenterOfMassPosition(bodyInterface, sphereId, position);
+            Raylib.DrawSphere(.(position.x, position.y, position.z), 1, Raylib.RED);
+            delete position;
             // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
             // // DrawCubes(Raylib.BLACK);
-            // Raylib.EndShaderMode();
+            Raylib.EndShaderMode();
 
             DrawModels();
+
+            if (JPH_BodyInterface_IsActive(bodyInterface, sphereId)) {
+                JPH_Vec3* velocity= new .(0,0,0);
+                JPH_BodyInterface_GetLinearVelocity(bodyInterface, sphereId, velocity);
+                delete velocity;
+            }
 
             Raylib.EndMode3D();
             Raylib.EndTextureMode();
@@ -330,8 +490,15 @@ class World {
         Rlgl.rlSetUniform(shadowMapLoc, &slot[0], ShaderUniformDataType.SHADER_UNIFORM_INT, NUM_CASCADES);
 
         Raylib.BeginMode3D(playerCamera);
+        cameraFrustum.Extract();
 
         Raylib.BeginShaderMode(mShadowShader);
+        JPH_RVec3* position = new .(0,0,0);
+        JPH_BodyInterface_GetCenterOfMassPosition(bodyInterface, sphereId, position);
+        if (cameraFrustum.SphereIn(position, 1)) {
+            Raylib.DrawSphere(*position, 1, Raylib.RED);
+        }
+        delete position;
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
         //DrawCubes(Raylib.WHITE);
         Raylib.EndShaderMode();
@@ -627,13 +794,15 @@ class World {
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
-        
     }
 
     public void DrawModels() {
-        // Draw models
         for (let model in mModelInstances) {
-            model.Draw();
+            var sphere = model.GetBoundingSphere();
+            if (cameraFrustum.SphereIn(&sphere.Center, sphere.Radius)) {
+                model.Draw();
+                //Raylib.DrawSphereWires(sphere.Center, sphere.Radius, 10, 10, Raylib.YELLOW);
+            }
         }
     }
 }
