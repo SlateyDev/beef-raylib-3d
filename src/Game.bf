@@ -39,7 +39,7 @@ class Game {
             mWorld.Render(mPlayer.camera);
         }
         
-        Raylib.BeginMode2D(Camera2D(.(0, 0), .(0, 0), 0f, 1.0f));
+        Raylib.BeginMode2D(Camera2D{zoom = 1});
         Raylib.DrawRectanglePro(Rectangle(10, 10, 120, 20), .(0,0), 0, Raylib.BLACK);
         Raylib.DrawFPS(14, 11);
         // Text("FPS: " + Raylib.GetFPS(), 10, 10, 20, Raylib.BLACK);

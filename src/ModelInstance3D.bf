@@ -42,7 +42,7 @@ class ModelInstance3D {
 
         Vector3 center = Raymath.Vector3Transform(boundingSphere.Center, mModel.transform);
         center = Raymath.Vector3Transform(center, transform);
-        return BoundingSphere() { Center = center, Radius = boundingSphere.Radius * Math.Min(Math.Min(Scale.x, Scale.y), Scale.z) };
+        return BoundingSphere() { Center = center, Radius = boundingSphere.Radius * Math.Max(Math.Max(Scale.x, Scale.y), Scale.z) };
     }
 
     public virtual void Update(float deltaTime) {}
