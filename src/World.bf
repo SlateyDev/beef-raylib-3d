@@ -223,7 +223,7 @@ class World {
         }
 
         physicsTime = Math.Min(physicsTime + frameTime, physicsThreshold);
-        if (physicsTime + frameTime > physicsUpdateTime) {
+        if (physicsTime > physicsUpdateTime) {
             JPH_PhysicsSystem_Update(system, physicsTime, 1, jobSystem);
             physicsTime -= physicsUpdateTime;
         } 
