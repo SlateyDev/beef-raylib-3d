@@ -797,12 +797,37 @@ class World {
     }
 
     public void DrawModels() {
+        //Needed for Ray Picking Example
+        var ray = Raylib.GetScreenToWorldRay(Raylib.GetMousePosition(), Program.game.mPlayer.camera);
+        RayCollision closestCollision = .{distance = float.MaxValue};
+        var closestModelIndex = -1;
+
+        List<ModelInstance3D> modelsToDraw = scope List<ModelInstance3D>();
+
         for (let model in mModelInstances) {
+            var modulate = Raylib.WHITE;
             var sphere = model.GetBoundingSphere();
             if (cameraFrustum.SphereIn(&sphere.Center, sphere.Radius)) {
-                model.Draw();
-                //Raylib.DrawSphereWires(sphere.Center, sphere.Radius, 10, 10, Raylib.YELLOW);
+                modelsToDraw.Add(model);
+
+                //Ray Picking Example
+                var raySphereCollision = Raylib.GetRayCollisionSphere(ray, sphere.Center, sphere.Radius);
+                if (raySphereCollision.hit) {
+                    for (var meshIndex < model.mModel.meshCount) {
+                        var rayMeshCollision = Raylib.GetRayCollisionMesh(ray, model.mModel.meshes[meshIndex], Raymath.MatrixMultiply(model.mModel.transform, model.Transform()));
+                        if (rayMeshCollision.hit) {
+                            if (rayMeshCollision.distance < closestCollision.distance) {
+                                closestCollision = rayMeshCollision;
+                                closestModelIndex = modelsToDraw.Count - 1;
+                            }
+                        }
+                    }
+                }
             }
+        }
+
+        for (let model in modelsToDraw) {
+            model.Draw(modelsToDraw.IndexOf(model) == closestModelIndex ? Raylib.GREEN : Raylib.WHITE);
         }
     }
 }

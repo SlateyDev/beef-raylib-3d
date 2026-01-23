@@ -34,11 +34,16 @@ class ModelInstance3D {
         Rotation = .(0, 0, 0);
     }
 
-    public BoundingSphere GetBoundingSphere() {
+    public Matrix Transform() {
         Matrix scale = Raymath.MatrixScale(Scale.x, Scale.y, Scale.z);
         Matrix rotation = Raymath.MatrixRotate(Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation) * Raymath.DEG2RAD);
         Matrix translation = Raymath.MatrixTranslate(Position.x, Position.y, Position.z);
         Matrix transform = Raymath.MatrixMultiply(Raymath.MatrixMultiply(scale, rotation), translation);
+        return transform;
+    }
+
+    public BoundingSphere GetBoundingSphere() {
+        Matrix transform = Transform();
 
         Vector3 center = Raymath.Vector3Transform(boundingSphere.Center, mModel.transform);
         center = Raymath.Vector3Transform(center, transform);
@@ -47,9 +52,9 @@ class ModelInstance3D {
 
     public virtual void Update(float deltaTime) {}
 
-    public virtual void Draw() {
+    public virtual void Draw(Color modulate = Raylib.WHITE) {
         Matrix saveMatrix = mModel.transform;
-        Raylib.DrawModelEx(mModel, Position, Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, Raylib.WHITE);
+        Raylib.DrawModelEx(mModel, Position, Raymath.Vector3Normalize(Rotation), Raymath.Vector3Length(Rotation), Scale, modulate);
         mModel.transform = saveMatrix;
     }
 }
