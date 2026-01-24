@@ -27,10 +27,10 @@ class Game {
         ui = new UIScene();
 
         var currentScreenWidth = Raylib.GetScreenWidth();
-	    var currentScreenHeight = Raylib.GetScreenHeight();
+	    //var currentScreenHeight = Raylib.GetScreenHeight();
 
-        var button1 = new Button(.(float(currentScreenWidth) / 2 - 170, float(currentScreenHeight) / 2 - 150, 340, 200), "TEST BUTTON");
-        var button2 = new Button(.(float(currentScreenWidth) / 2 - 170, float(currentScreenHeight) / 2 - 50, 340, 200), "TEST BUTTON 2");
+        var button1 = new Button(.(10, 100, 200, 90), "TEST BUTTON");
+        var button2 = new Button(.(10, 200, 200, 90), "TEST BUTTON 2");
 
         button1.onClick.Add(new (button) => {Console.WriteLine($"Clicked {button.text}");});
         button2.onClick.Add(new (button) => {Console.WriteLine($"Clicked {button.text}");});
@@ -44,6 +44,7 @@ class Game {
         if (mIsRunning) {
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
+            PhysicsServer.Update();
             // Check for game state changes
         }
 

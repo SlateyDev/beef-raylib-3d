@@ -7,8 +7,8 @@ using static Jolt.Jolt;
 
 class World {
     private List<uint8> mLevelData = new .() ~ delete(mLevelData);
-    private int mWidth = 100;
-    private int mHeight = 100;
+    private int mFloorWidth = 50;
+    private int mFloorLength = 50;
 
     // private Shader mDepthShader;
     private Shader mShadowShader;
@@ -37,25 +37,8 @@ class World {
 
     Frustum cameraFrustum;
 
-    JPH_JobSystem* jobSystem;
-    JPH_PhysicsSystem* system;
-    JPH_BodyInterface* bodyInterface;
     JPH_BodyID floorId;
     JPH_BodyID sphereId;
-
-    enum Layers : JPH_ObjectLayer
-    {
-    	NON_MOVING,
-    	MOVING,
-    	NUM_LAYERS
-    };
-
-    enum BroadPhaseLayers : JPH_BroadPhaseLayer
-    {
-    	NON_MOVING,
-    	MOVING,
-    	NUM_LAYERS
-    };
 
     public this() {
         LoadModels();
@@ -63,49 +46,13 @@ class World {
         //CreateObstacles();
         Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
 
-        JPH_SetTraceHandler((message) => { Console.WriteLine(message); });
-        //JPH_SetAssertFailureHandler((expression, message, file, line) => { Console.WriteLine(message); return false; });
-
-        if (JPH_Init()) {
-            Console.WriteLine("Jolt Initialized!");
-        } else {
-            Console.WriteLine("Jolt failed to initialize!");
-        }
-
-        jobSystem = JPH_JobSystemThreadPool_Create(null);
-        if (jobSystem == null) {
-            Console.WriteLine("Failed to create Jolt job system!");
-        }
-
-        // We use only 2 layers: one for non-moving objects and one for moving objects
-        JPH_ObjectLayerPairFilter* objectLayerPairFilterTable = JPH_ObjectLayerPairFilterTable_Create(Layers.NUM_LAYERS.Underlying);
-        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.NON_MOVING.Underlying, Layers.MOVING.Underlying);
-        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.NON_MOVING.Underlying);
-
-        // We use a 1-to-1 mapping between object layers and broadphase layers
-        JPH_BroadPhaseLayerInterface* broadPhaseLayerInterfaceTable = JPH_BroadPhaseLayerInterfaceTable_Create(Layers.NUM_LAYERS.Underlying, BroadPhaseLayers.NUM_LAYERS.Underlying);
-        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.NON_MOVING.Underlying, BroadPhaseLayers.NON_MOVING.Underlying);
-        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.MOVING.Underlying, BroadPhaseLayers.MOVING.Underlying);
-
-        JPH_ObjectVsBroadPhaseLayerFilter* objectVsBroadPhaseLayerFilter = JPH_ObjectVsBroadPhaseLayerFilterTable_Create(broadPhaseLayerInterfaceTable, BroadPhaseLayers.NUM_LAYERS.Underlying, objectLayerPairFilterTable, Layers.NUM_LAYERS.Underlying);
-
-        JPH_PhysicsSystemSettings settings = .();
-        settings.maxBodies = 65536;
-        settings.numBodyMutexes = 0;
-        settings.maxBodyPairs = 65536;
-        settings.maxContactConstraints = 65536;
-        settings.broadPhaseLayerInterface = broadPhaseLayerInterfaceTable;
-        settings.objectLayerPairFilter = objectLayerPairFilterTable;
-        settings.objectVsBroadPhaseLayerFilter = objectVsBroadPhaseLayerFilter;
-        system = JPH_PhysicsSystem_Create(&settings);
-        bodyInterface = JPH_PhysicsSystem_GetBodyInterface(system);
 
         floorId = .();
         {
         	// Next we can create a rigid body to serve as the floor, we make a large box
         	// Create the settings for the collision volume (the shape). 
         	// Note that for simple shapes (like boxes) you can also directly construct a BoxShape.
-        	JPH_Vec3 boxHalfExtents = .(100.0f, 1.0f, 100.0f);
+        	JPH_Vec3 boxHalfExtents = .(mFloorWidth / 2, 1.0f, mFloorLength / 2);
         	JPH_BoxShape* floorShape = JPH_BoxShape_Create(&boxHalfExtents, JPH_DEFAULT_CONVEX_RADIUS);
 
         	JPH_Vec3 floorPosition = .(0.0f, -1.0f, 0.0f);
@@ -114,10 +61,10 @@ class World {
         		&floorPosition,
         		null, // Identity, 
         		JPH_MotionType.Static,
-        		Layers.NON_MOVING.Underlying);
+        		PhysicsServer.Layers.NON_MOVING.Underlying);
 
         	// Create the actual rigid body
-        	floorId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, floorSettings,JPH_Activation.DontActivate);
+        	floorId = PhysicsServer.CreateAndAddBody(floorSettings, .DontActivate);
         	JPH_BodyCreationSettings_Destroy(floorSettings);
         }
 
@@ -125,34 +72,30 @@ class World {
         sphereId = .();
         {
         	JPH_SphereShape* sphereShape = JPH_SphereShape_Create(1.0f);
-        	JPH_Vec3 spherePosition = .(0.0f, 5.0f, 0.0f);
+        	JPH_Vec3 spherePosition = .(0.0f, 5.0f, 0.7f);
         	JPH_BodyCreationSettings* sphereSettings = JPH_BodyCreationSettings_Create3(
         		(JPH_Shape*)sphereShape,
         		&spherePosition,
-        		null, // Identity, 
+        		null, // Identity,
         		JPH_MotionType.Dynamic,
-        		Layers.MOVING.Underlying);
+        		PhysicsServer.Layers.MOVING.Underlying);
 
-        	sphereId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, sphereSettings, JPH_Activation.Activate);
+        	sphereId = PhysicsServer.CreateAndAddBody(sphereSettings, .Activate);
         	JPH_BodyCreationSettings_Destroy(sphereSettings);
         }
 
         // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
         // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
         JPH_Vec3 sphereLinearVelocity = .(0.0f, 10f, 0.0f);
-        JPH_BodyInterface_SetLinearVelocity(bodyInterface, sphereId, &sphereLinearVelocity);
+        PhysicsServer.SetLinearVelocity(sphereId, &sphereLinearVelocity);
 
         JPH_SixDOFConstraintSettings jointSettings;
         JPH_SixDOFConstraintSettings_Init(&jointSettings);
 
-        // We simulate the physics world in discrete time steps. 60 Hz is a good rate to update the physics system.
-        const float cDeltaTime = 1.0f / 60.0f;
-
         // Optional step: Before starting the physics simulation you can optimize the broad phase. This improves collision detection performance (it's pointless here because we only have 2 bodies).
         // You should definitely not call this every frame or when e.g. streaming in a new level section as it is an expensive operation.
         // Instead insert all new objects in batches instead of 1 at a time to keep the broad phase efficient.
-        JPH_PhysicsSystem_OptimizeBroadPhase(system);
-
+        PhysicsServer.Optimise();
 
 #if BF_PLATFORM_WASM
     //    char8* vsDepthShaderFile = "assets/shaders/100/depthPack.vs";
@@ -219,14 +162,8 @@ class World {
 
         if (Raylib.IsKeyPressed(.KEY_LEFT_SHIFT)) {
             JPH_Vec3 sphereLinearVelocity = .(0.0f, 5f, 0.0f);
-            JPH_BodyInterface_SetLinearVelocity(bodyInterface, sphereId, &sphereLinearVelocity);
+            PhysicsServer.SetLinearVelocity(sphereId, &sphereLinearVelocity);
         }
-
-        physicsTime = Math.Min(physicsTime + frameTime, physicsThreshold);
-        if (physicsTime > physicsUpdateTime) {
-            JPH_PhysicsSystem_Update(system, physicsTime, 1, jobSystem);
-            physicsTime -= physicsUpdateTime;
-        } 
     }
 
     private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
@@ -449,20 +386,20 @@ class World {
             // // Raylib.BeginShaderMode(mDepthShader);
             Raylib.BeginShaderMode(mShadowShader);
             JPH_RVec3* position = new .(0,0,0);
-            JPH_BodyInterface_GetCenterOfMassPosition(bodyInterface, sphereId, position);
+            PhysicsServer.GetCenterOfMassPosition(sphereId, position);
             Raylib.DrawSphere(.(position.x, position.y, position.z), 1, Raylib.RED);
             delete position;
-            // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.BLACK);
+            // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mFloorWidth, mFloorLength), Raylib.BLACK);
             // // DrawCubes(Raylib.BLACK);
             Raylib.EndShaderMode();
 
             DrawModels();
 
-            if (JPH_BodyInterface_IsActive(bodyInterface, sphereId)) {
-                JPH_Vec3* velocity= new .(0,0,0);
-                JPH_BodyInterface_GetLinearVelocity(bodyInterface, sphereId, velocity);
-                delete velocity;
-            }
+            //if (PhysicsServer.BodyIsActive(sphereId)) {
+            //    JPH_Vec3* velocity= new .(0,0,0);
+            //    PhysicsServer.GetLinearVelocity(sphereId, velocity);
+            //    delete velocity;
+            //}
 
             Raylib.EndMode3D();
             Raylib.EndTextureMode();
@@ -494,12 +431,12 @@ class World {
 
         Raylib.BeginShaderMode(mShadowShader);
         JPH_RVec3* position = new .(0,0,0);
-        JPH_BodyInterface_GetCenterOfMassPosition(bodyInterface, sphereId, position);
+        PhysicsServer.GetCenterOfMassPosition(sphereId, position);
         if (cameraFrustum.SphereIn(position, 1)) {
             Raylib.DrawSphere(*position, 1, Raylib.RED);
         }
         delete position;
-        Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mWidth, mHeight), Raylib.DARKGRAY);
+        Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mFloorWidth, mFloorLength), Raylib.DARKGRAY);
         //DrawCubes(Raylib.WHITE);
         Raylib.EndShaderMode();
 
@@ -747,35 +684,41 @@ class World {
         sedan.currentRoadSegment = roadTiles[.(5, 0, 0)];
         sedan.Start();
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
-        modelInstance.Position = .(2, 0, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
+        //var sedanAABB = Raylib.GetModelBoundingBox(sedan.mModel);
+        //var sedanShape = JPH_BoxShape_Create(&Vector3((sedanAABB.max.x - sedanAABB.min.x) / 2f, (sedanAABB.max.y - sedanAABB.min.y) / 2f, (sedanAABB.max.z - sedanAABB.min.z) / 2f), JPH_DEFAULT_CONVEX_RADIUS);
+        //var sedanBodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)sedanShape, &sedan.Position, null, JPH_MotionType.Kinematic, PhysicsServer.Layers.MOVING.Underlying);
+        //PhysicsServer.CreateAndAddBody(sedanBodySettings, .DontActivate);
+        //JPH_BodyCreationSettings_Destroy(sedanBodySettings);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
-        modelInstance.Position = .(2, 0, 0);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
+        //modelInstance.Position = .(2, 0, -1);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 270, 0);
+        //mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
-        modelInstance.Position = .(2, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
+        //modelInstance.Position = .(2, 0, 0);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 270, 0);
+        //mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
-        modelInstance.Position = .(0, 0, -2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
+        //modelInstance.Position = .(2, 0, 1);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 270, 0);
+        //mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
-        modelInstance.Position = .(0, 0, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
+        //modelInstance.Position = .(0, 0, -2);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 90, 0);
+        //mModelInstances.Add(modelInstance);
+
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
+        //modelInstance.Position = .(0, 0, -1);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 90, 0);
+        //mModelInstances.Add(modelInstance);
 
         modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_E.gltf"));
         modelInstance.Position = .(0, 0, 0);
@@ -783,17 +726,24 @@ class World {
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
-        modelInstance.Position = .(0, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
+        var buildingAABB = Raylib.GetModelBoundingBox(modelInstance.mModel);
+        var rot = Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD);
+        var buildingShape = JPH_BoxShape_Create(&Vector3((buildingAABB.max.x - buildingAABB.min.x) / 2f, (buildingAABB.max.y - buildingAABB.min.y) / 2f, (buildingAABB.max.z - buildingAABB.min.z) / 2f), JPH_DEFAULT_CONVEX_RADIUS);
+        var buildingBodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)buildingShape, &modelInstance.Position, (JPH_Quat*)&rot, JPH_MotionType.Static, PhysicsServer.Layers.NON_MOVING.Underlying);
+        PhysicsServer.CreateAndAddBody(buildingBodySettings, .DontActivate);
+        JPH_BodyCreationSettings_Destroy(buildingBodySettings);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
-        modelInstance.Position = .(0, 0, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
+        //modelInstance.Position = .(0, 0, 1);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 90, 0);
+        //mModelInstances.Add(modelInstance);
+
+        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
+        //modelInstance.Position = .(0, 0, 2);
+        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        //modelInstance.Rotation = .(0, 90, 0);
+        //mModelInstances.Add(modelInstance);
     }
 
     public void DrawModels() {
@@ -805,7 +755,6 @@ class World {
         List<ModelInstance3D> modelsToDraw = scope List<ModelInstance3D>();
 
         for (let model in mModelInstances) {
-            var modulate = Raylib.WHITE;
             var sphere = model.GetBoundingSphere();
             if (cameraFrustum.SphereIn(&sphere.Center, sphere.Radius)) {
                 modelsToDraw.Add(model);
