@@ -44,7 +44,7 @@ class Game {
         if (mIsRunning) {
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
-            PhysicsServer.Update();
+            PhysicsServer.Update(frameTime);
             // Check for game state changes
         }
 

@@ -12,6 +12,9 @@ public static class PhysicsServer
     static JPH_BodyInterface* bodyInterface;
     static JPH_DebugRenderer* debugRenderer;
     static JPH_DrawSettings drawSettings;
+    static float fixedTimestep = 1f / 60f;
+    static float accumulator = 0f;
+    static int32 maxUpdateSteps = 8;
 
     static bool DebugDrawing = true;
 
@@ -121,8 +124,15 @@ public static class PhysicsServer
         JPH_PhysicsSystem_OptimizeBroadPhase(system);
     }
 
-    public static void Update() {
-        JPH_PhysicsSystem_Update(system, 1f / 60f, 1, jobSystem);
+    public static void Update(float frameTime) {
+        int32 steps = 0;
+        accumulator += frameTime;
+        while (accumulator >= fixedTimestep && steps < maxUpdateSteps) {
+            JPH_PhysicsSystem_Update(system, fixedTimestep, 1, jobSystem);
+            accumulator -= fixedTimestep;
+            steps++;
+        }
+        accumulator = Math.Min(accumulator, fixedTimestep * 2);
     }
 
     public static void GetCenterOfMassPosition(uint32 bodyId, JPH_RVec3* position) {
