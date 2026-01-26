@@ -442,6 +442,8 @@ class World {
 
         DrawModels();
 
+        Program.game.[Friend]scene.Render();
+
         PhysicsServer.DebugDrawBodies();
 
         Raylib.EndMode3D();

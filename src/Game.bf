@@ -50,9 +50,9 @@ class Game {
 
     public void Update(float frameTime) {
         if (mIsRunning) {
-            scene.Update(frameTime);
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
+            scene.Update(frameTime);
             PhysicsServer.Update(frameTime);
             // Check for game state changes
         }
@@ -65,6 +65,7 @@ class Game {
         defer Raylib.EndDrawing();
 
         if (mIsRunning) {
+            scene.RefreshRenderables();
             // Render the world (which now includes shadow mapping)
             mWorld.Render(mPlayer.camera);
         }

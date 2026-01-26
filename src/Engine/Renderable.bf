@@ -1,5 +1,5 @@
 using System;
 
-[Reflect(.DefaultConstructor), AlwaysInclude(AssumeInstantiated=true)]
-class Renderable : Component {
+abstract class Renderable : Component {
+    public abstract void Render();
 }
