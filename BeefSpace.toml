@@ -19,3 +19,7 @@ EmitObjectAccessCheck = false
 AllocType = "CRT"
 EnableObjectDebugFlags = false
 EmitObjectAccessCheck = false
+
+[Configs.Release.Win64]
+Toolset = "Microsoft"
+LTOType = "None"
