@@ -72,7 +72,7 @@ class World {
         sphereId = .();
         {
         	JPH_SphereShape* sphereShape = JPH_SphereShape_Create(1.0f);
-        	JPH_Vec3 spherePosition = .(0.0f, 5.0f, 0.7f);
+        	JPH_Vec3 spherePosition = .(0.6f, 5f, 1f);
         	JPH_BodyCreationSettings* sphereSettings = JPH_BodyCreationSettings_Create3(
         		(JPH_Shape*)sphereShape,
         		&spherePosition,
@@ -442,6 +442,8 @@ class World {
 
         DrawModels();
 
+        PhysicsServer.DebugDrawBodies();
+
         Raylib.EndMode3D();
 
         for (int32 cascade_index = 0; cascade_index < NUM_CASCADES; cascade_index++) {
@@ -684,66 +686,74 @@ class World {
         sedan.currentRoadSegment = roadTiles[.(5, 0, 0)];
         sedan.Start();
 
-        //var sedanAABB = Raylib.GetModelBoundingBox(sedan.mModel);
-        //var sedanShape = JPH_BoxShape_Create(&Vector3((sedanAABB.max.x - sedanAABB.min.x) / 2f, (sedanAABB.max.y - sedanAABB.min.y) / 2f, (sedanAABB.max.z - sedanAABB.min.z) / 2f), JPH_DEFAULT_CONVEX_RADIUS);
-        //var sedanBodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)sedanShape, &sedan.Position, null, JPH_MotionType.Kinematic, PhysicsServer.Layers.MOVING.Underlying);
-        //PhysicsServer.CreateAndAddBody(sedanBodySettings, .DontActivate);
-        //JPH_BodyCreationSettings_Destroy(sedanBodySettings);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
+        modelInstance.Position = .(2, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
-        //modelInstance.Position = .(2, 0, -1);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 270, 0);
-        //mModelInstances.Add(modelInstance);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
+        modelInstance.Position = .(2, 0, 0);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
-        //modelInstance.Position = .(2, 0, 0);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 270, 0);
-        //mModelInstances.Add(modelInstance);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
+        modelInstance.Position = .(2, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 270, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
-        //modelInstance.Position = .(2, 0, 1);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 270, 0);
-        //mModelInstances.Add(modelInstance);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
+        modelInstance.Position = .(0, 0, -2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
-        //modelInstance.Position = .(0, 0, -2);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 90, 0);
-        //mModelInstances.Add(modelInstance);
-
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
-        //modelInstance.Position = .(0, 0, -1);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 90, 0);
-        //mModelInstances.Add(modelInstance);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
+        modelInstance.Position = .(0, 0, -1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
         modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_E.gltf"));
         modelInstance.Position = .(0, 0, 0);
         modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
         modelInstance.Rotation = .(0, 90, 0);
         mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        var buildingAABB = Raylib.GetModelBoundingBox(modelInstance.mModel);
-        var rot = Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD);
-        var buildingShape = JPH_BoxShape_Create(&Vector3((buildingAABB.max.x - buildingAABB.min.x) / 2f, (buildingAABB.max.y - buildingAABB.min.y) / 2f, (buildingAABB.max.z - buildingAABB.min.z) / 2f), JPH_DEFAULT_CONVEX_RADIUS);
-        var buildingBodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)buildingShape, &modelInstance.Position, (JPH_Quat*)&rot, JPH_MotionType.Static, PhysicsServer.Layers.NON_MOVING.Underlying);
-        PhysicsServer.CreateAndAddBody(buildingBodySettings, .DontActivate);
-        JPH_BodyCreationSettings_Destroy(buildingBodySettings);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
+        modelInstance.Position = .(0, 0, 1);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
-        //modelInstance.Position = .(0, 0, 1);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 90, 0);
-        //mModelInstances.Add(modelInstance);
+        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
+        modelInstance.Position = .(0, 0, 2);
+        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
+        modelInstance.Rotation = .(0, 90, 0);
+        mModelInstances.Add(modelInstance);
+        CreateModelStaticPhysicsBoundingBox(modelInstance);
+    }
 
-        //modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
-        //modelInstance.Position = .(0, 0, 2);
-        //modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        //modelInstance.Rotation = .(0, 90, 0);
-        //mModelInstances.Add(modelInstance);
+    public void CreateModelStaticPhysicsBoundingBox(ModelInstance3D modelInstance) {
+        var modelAABB = modelInstance.boundingBox;
+        modelAABB.min = Raymath.Vector3Multiply(modelAABB.min, modelInstance.Scale);
+        modelAABB.max = Raymath.Vector3Multiply(modelAABB.max, modelInstance.Scale);
+        var rot = Raymath.QuaternionFromAxisAngle(Raymath.Vector3Normalize(modelInstance.Rotation), Raymath.Vector3Length(modelInstance.Rotation) * Raymath.DEG2RAD);
+        var halfsize = Vector3((modelAABB.max.x - modelAABB.min.x) / 2f, (modelAABB.max.y - modelAABB.min.y) / 2f, (modelAABB.max.z - modelAABB.min.z) / 2f);
+        var center = Vector3(modelInstance.Position.x + halfsize.x + modelAABB.min.x, modelInstance.Position.y + halfsize.y + modelAABB.min.y, modelInstance.Position.z + halfsize.z + modelAABB.min.z);
+        var shape = JPH_BoxShape_Create(&halfsize, JPH_DEFAULT_CONVEX_RADIUS);
+        var bodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)shape, &center, (JPH_Quat*)&rot, JPH_MotionType.Static, PhysicsServer.Layers.NON_MOVING.Underlying);
+        PhysicsServer.CreateAndAddBody(bodySettings, .DontActivate);
+        JPH_BodyCreationSettings_Destroy(bodySettings);
     }
 
     public void DrawModels() {

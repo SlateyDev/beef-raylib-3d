@@ -3,12 +3,17 @@ using RaylibBeef;
 using static Jolt.Jolt;
 using System;
 using System.Collections;
+using System.Interop;
 
 public static class PhysicsServer
 {
     static JPH_JobSystem* jobSystem;
     static JPH_PhysicsSystem* system;
     static JPH_BodyInterface* bodyInterface;
+    static JPH_DebugRenderer* debugRenderer;
+    static JPH_DrawSettings drawSettings;
+
+    static bool DebugDrawing = true;
 
     public enum Layers : JPH_ObjectLayer
     {
@@ -26,6 +31,22 @@ public static class PhysicsServer
 
     static List<uint32> bodies;
 
+    static JPH_DebugRenderer_Procs procs = .{
+        DrawLine = => DebugDrawLine,
+        DrawTriangle = => DebugDrawTriangle,
+        DrawText3D = => DebugDrawText3D
+    };
+
+    static void DebugDrawLine(void* userData, JPH_RVec3* point1, JPH_RVec3* point2, JPH_Color color) {
+        Raylib.DrawLine3D(*point1, *point2, Raylib.GetColor((int32)color));
+    }
+    static void DebugDrawTriangle(void* userData, JPH_RVec3* point1, JPH_RVec3* point2, JPH_RVec3* point3, JPH_Color color, JPH_DebugRenderer_CastShadow shadow) {
+        Raylib.DrawTriangle3D(*point1, *point2, *point3, Raylib.GetColor((int32)color));
+    }
+    static void DebugDrawText3D(void* userData, JPH_RVec3* pos, c_char* text, JPH_Color color, float size) {
+
+    }
+
     static this() {
         //JPH_SetTraceHandler((message) => { Console.WriteLine(message); });
         //JPH_SetAssertFailureHandler((expression, message, file, line) => { Console.WriteLine(message); return false; });
@@ -35,6 +56,13 @@ public static class PhysicsServer
         } else {
             Console.WriteLine("Jolt failed to initialize!");
         }
+
+        JPH_DebugRenderer_SetProcs(&procs);
+        debugRenderer = JPH_DebugRenderer_Create(null);
+        JPH_DrawSettings_InitDefault(&drawSettings);
+        drawSettings.drawShape = true;
+        drawSettings.drawShapeWireframe = true; // Wireframe for debug
+        drawSettings.drawBoundingBox = false;
 
         jobSystem = JPH_JobSystemThreadPool_Create(null);
         if (jobSystem == null) {
@@ -72,6 +100,7 @@ public static class PhysicsServer
             JPH_BodyInterface_DestroyBody(bodyInterface, bodyId);
         }
         delete bodies;
+        JPH_DebugRenderer_Destroy(debugRenderer);
         JPH_JobSystem_Destroy(jobSystem);
         JPH_PhysicsSystem_Destroy(system);
         JPH_Shutdown();
@@ -102,5 +131,11 @@ public static class PhysicsServer
 
     public static bool BodyIsActive(uint32 bodyId) {
         return JPH_BodyInterface_IsActive(bodyInterface, bodyId);
+    }
+
+    public static void DebugDrawBodies() {
+        if (!DebugDrawing) return;
+
+        JPH_PhysicsSystem_DrawBodies(system, &drawSettings, debugRenderer, null);
     }
 }
