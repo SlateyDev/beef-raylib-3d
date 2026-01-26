@@ -7,6 +7,8 @@ class Game {
     public Player mPlayer;
     public World mWorld;
 
+    Scene scene = new Scene() ~ delete _;
+
     private UIScene ui;
 
     public this() {
@@ -20,6 +22,12 @@ class Game {
     }
 
     public void Start() {
+        GameObject go = new GameObject();
+        go.AddComponent<MeshRenderer>();
+        go.AddComponent<BoxCollider>();
+        scene.[Friend]objectsInScene.Add(go);
+        scene.WakeScene();
+
         // Initialize game resources
         mPlayer = new Player(.(-5.0f, 1.0f, 0.0f)); // Position player slightly above the floor
         mWorld = new World();
@@ -42,6 +50,7 @@ class Game {
 
     public void Update(float frameTime) {
         if (mIsRunning) {
+            scene.Update(frameTime);
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
             PhysicsServer.Update(frameTime);
