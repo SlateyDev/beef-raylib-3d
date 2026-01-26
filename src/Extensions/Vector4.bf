@@ -16,7 +16,7 @@ extension Vector4 {
         return Raymath.Vector4Subtract(lhs, rhs);
     }
 
-    public static Vector4 operator*(Vector4 lhs, Vector4 rhs) {
+    public static Quaternion operator*(Quaternion lhs, Quaternion rhs) {
         return Raymath.Vector4Multiply(lhs, rhs);
     }
 }

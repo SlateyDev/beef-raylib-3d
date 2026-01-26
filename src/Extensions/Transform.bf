@@ -1,10 +1,11 @@
+using System;
 namespace RaylibBeef;
 
 extension Transform {
-    public Transform GetWorldTransform(Transform parentWorld, Transform childLocal) {
-        return .(
+    public static Transform GetWorldTransform(Transform parentWorld, Transform childLocal) {
+        var result = Transform(
             // 1. Rotate and scale the local translation by the parent, then add parent's position
-            parentWorld.translation + .(parentWorld.rotation * .(childLocal.translation * parentWorld.scale)),
+            parentWorld.translation + Raymath.Vector3RotateByQuaternion(childLocal.translation * parentWorld.scale, parentWorld.rotation),
             
             // 2. Combine rotations (Parent * Child)
             parentWorld.rotation * childLocal.rotation,
@@ -12,14 +13,15 @@ extension Transform {
             // 3. Combine scales
             parentWorld.scale * childLocal.scale
         );
+        return result;
     }
 
-    public Transform GetLocalTransform(Transform parentWorld, Transform childWorld)
+    public static Transform GetLocalTransform(Transform parentWorld, Transform childWorld)
     {
         Quaternion invParentRot = Raymath.QuaternionInvert(parentWorld.rotation);
 
         // 1. Subtract translation, then "un-rotate" and "un-scale"
-        Vector3 localTranslation = .(invParentRot * .(childWorld.translation - parentWorld.translation));
+        Vector3 localTranslation = Raymath.Vector3RotateByQuaternion(childWorld.translation - parentWorld.translation, invParentRot);
         localTranslation /= parentWorld.scale; // Component-wise division
 
         return .(

@@ -4,7 +4,17 @@ using System.Collections;
 class Scene {
     public bool IsActive { get; private set; }
 
-    List<GameObject> objectsInScene = new List<GameObject>() ~ DeleteContainerAndDisposeItems!(_);
+    List<GameObject> objectsInScene = new List<GameObject>() ~ {
+        List<GameObject> objectsToDispose = scope List<GameObject>();
+        for (var sceneObject in _) {
+            if (sceneObject.[Friend]parent != null) continue;
+            objectsToDispose.Add(sceneObject);
+        }
+        for (var sceneObject in objectsToDispose) {
+            sceneObject.Dispose();
+        }
+        delete _;
+    }
 
     public void WakeScene() {
         for (var sceneObject in objectsInScene) {

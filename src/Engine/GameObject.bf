@@ -18,7 +18,12 @@ class GameObject : BaseObject {
         }
     }
 
-    public Transform transform { get; set; }
+    public Transform transform;
+
+    public Transform GetWorldTransform() {
+        if (parent == null) return transform;
+        return Transform.GetWorldTransform(parent.GetWorldTransform(), transform);
+    }
 
     public Scene scene { get; private set; };
     GameObject parent;
@@ -44,16 +49,18 @@ class GameObject : BaseObject {
     public static void Instantiate(GameObject original, Vector3 vector, Quaternion rotation, GameObject parent = null) {
     }
 
-    public void AddComponent<T>() where T: Component {
+    public T AddComponent<T>() where T: Component {
         switch (typeof(T).CreateObject()) {
             case .Ok(let component):
                 var castComponent = (T)component;
                 castComponent.[Friend]parent = this;
                 components.Add(castComponent);
     
-                if (!IsActive || !castComponent.IsActive || castComponent.[Friend]awakeCalled) return;
-                castComponent.Awake();
-                castComponent.[Friend]awakeCalled = true;
+                if (IsActive && castComponent.IsActive && !castComponent.[Friend]awakeCalled) {
+                    castComponent.Awake();
+                    castComponent.[Friend]awakeCalled = true;
+                }
+                return castComponent;
             case .Err:
                 Runtime.FatalError(scope $"Unable to create component of type {typeof(T).GetName(.. scope .())}");
         }

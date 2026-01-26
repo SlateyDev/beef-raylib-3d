@@ -23,9 +23,21 @@ class Game {
 
     public void Start() {
         GameObject go = new GameObject();
-        go.AddComponent<MeshRenderer>();
+        go.transform = .(.(5, 3, 5), .(0, 0, 0, 1), .(1, 1, 1));
+        var meshRenderer = go.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         go.AddComponent<BoxCollider>();
         scene.[Friend]objectsInScene.Add(go);
+
+        GameObject go2 = new GameObject();
+        go2.transform = .(.(5, 5, 6), .(0, 0, 0, 1), .(1, 1, 1));
+        go2.[Friend]parent = go;
+        go.[Friend]children.Add(go2);
+        var meshRenderer2 = go2.AddComponent<MeshRenderer>();
+        meshRenderer2.Model = ModelManager.Get("assets/models/building_B.gltf");
+        go2.AddComponent<BoxCollider>();
+        scene.[Friend]objectsInScene.Add(go2);
+
         scene.WakeScene();
 
         // Initialize game resources
