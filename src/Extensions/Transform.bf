@@ -8,7 +8,7 @@ extension Transform {
             parentWorld.translation + Raymath.Vector3RotateByQuaternion(childLocal.translation * parentWorld.scale, parentWorld.rotation),
             
             // 2. Combine rotations (Parent * Child)
-            parentWorld.rotation * childLocal.rotation,
+            Raymath.QuaternionMultiply(parentWorld.rotation, childLocal.rotation),
             
             // 3. Combine scales
             parentWorld.scale * childLocal.scale
@@ -28,7 +28,7 @@ extension Transform {
             localTranslation,
             
             // 2. Un-rotate: (Inverse Parent * Child)
-            invParentRot * childWorld.rotation,
+            Raymath.QuaternionMultiply(invParentRot, childWorld.rotation),
             
             // 3. Un-scale
             childWorld.scale / parentWorld.scale

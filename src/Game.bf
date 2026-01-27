@@ -44,7 +44,8 @@ class Game {
         scene.WakeScene();
 
         // Initialize game resources
-        mPlayer = new Player(.(-5.0f, 1.0f, 0.0f)); // Position player slightly above the floor
+        mPlayer = new Player(.(0.0f, 1.0f, -5.0f)); // Position player slightly above the floor
+        mPlayer.RotationAngle = 90f;
         mWorld = new World();
         mWorld.LoadLevel("");
         ui = new UIScene();
