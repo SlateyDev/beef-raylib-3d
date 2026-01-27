@@ -9,6 +9,7 @@ class Game {
 
     GameObject go;
     GameObject go2;
+    GameObject go3;
 
     Scene scene = new Scene() ~ delete _;
 
@@ -41,6 +42,15 @@ class Game {
         go2.AddComponent<BoxCollider>();
         scene.[Friend]objectsInScene.Add(go2);
 
+        go3 = new GameObject();
+        go3.transform = .(.(2, 1, 2), .(0, 0, 0, 1), .(1, 1, 1));
+        go3.[Friend]parent = go2;
+        go2.[Friend]children.Add(go3);
+        var meshRenderer3 = go3.AddComponent<MeshRenderer>();
+        meshRenderer3.Model = ModelManager.Get("assets/models/building_C.gltf");
+        go3.AddComponent<BoxCollider>();
+        scene.[Friend]objectsInScene.Add(go3);
+
         scene.WakeScene();
 
         // Initialize game resources
@@ -69,6 +79,15 @@ class Game {
             Transform transform = go.transform;
             transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
             go.transform = transform;
+
+            transform = go2.transform;
+            transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
+            go2.transform = transform;
+
+            transform = go3.transform;
+            transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
+            go3.transform = transform;
+
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
             scene.Update(frameTime);

@@ -395,6 +395,8 @@ class World {
 
             DrawModels();
 
+            Program.game.[Friend]scene.Render();
+
             //if (PhysicsServer.BodyIsActive(sphereId)) {
             //    JPH_Vec3* velocity= new .(0,0,0);
             //    PhysicsServer.GetLinearVelocity(sphereId, velocity);
