@@ -7,6 +7,9 @@ class Game {
     public Player mPlayer;
     public World mWorld;
 
+    GameObject go;
+    GameObject go2;
+
     Scene scene = new Scene() ~ delete _;
 
     private UIScene ui;
@@ -22,14 +25,14 @@ class Game {
     }
 
     public void Start() {
-        GameObject go = new GameObject();
+        go = new GameObject();
         go.transform = .(.(5, 3, 5), .(0, 0, 0, 1), .(1, 1, 1));
         var meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         go.AddComponent<BoxCollider>();
         scene.[Friend]objectsInScene.Add(go);
 
-        GameObject go2 = new GameObject();
+        go2 = new GameObject();
         go2.transform = .(.(5, 5, 6), .(0, 0, 0, 1), .(1, 1, 1));
         go2.[Friend]parent = go;
         go.[Friend]children.Add(go2);
@@ -62,6 +65,9 @@ class Game {
 
     public void Update(float frameTime) {
         if (mIsRunning) {
+            Transform transform = go.transform;
+            transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
+            go.transform = transform;
             mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
             scene.Update(frameTime);
