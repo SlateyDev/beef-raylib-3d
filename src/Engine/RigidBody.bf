@@ -5,18 +5,17 @@ using System;
 
 [Reflect(.DefaultConstructor), AlwaysInclude(AssumeInstantiated=true)]
 class RigidBody : Component {
+    public JPH_MotionType motionType = .Static;
+
     JPH_BodyCreationSettings* settings;
     JPH_BoxShape* shape;
     
     public override void Awake() {
-        //Get all shapes (Colliders)
         var colliders = GetComponents<Collider>();
         defer delete colliders;
 
         JPH_Shape* shape;
 
-        //If there is only one collider create its shape and create the body from the shape.
-        //If there is more than one collider, create a compoundshape that collects the other shapes
         if (colliders.Count == 1) {
             shape = colliders[0].CreateShape();
         } else {
@@ -29,8 +28,8 @@ class RigidBody : Component {
             shape = (JPH_Shape*)compoundShape;
         }
 
-        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &gameObject.GetWorldTransform().translation, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, JPH_MotionType.Static, PhysicsServer.Layers.NON_MOVING.Underlying);
-        PhysicsServer.CreateAndAddBody(bodyCreationSettings, JPH_Activation.DontActivate);
+        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &gameObject.GetWorldTransform().translation, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, motionType, PhysicsServer.Layers.MOVING.Underlying);
+        PhysicsServer.CreateAndAddBody(bodyCreationSettings, JPH_Activation.Activate);
         PhysicsServer.JPH_BodyCreationSettings_Destroy(bodyCreationSettings);
     }
 }

@@ -18,24 +18,8 @@ class MeshRenderer : Renderable {
 
         Vector3 axis = .(0, 1, 0);
         float angle = 0;
-        var x = worldTransform.rotation.x;
-        var y = worldTransform.rotation.y;
-        var z = worldTransform.rotation.z;
-        var w = worldTransform.rotation.w;
-        var length = Math.Sqrt(w*w + x*x + y*y + z*z);
-        x /= length;
-        y /= length;
-        z /= length;
-        w /= length;
-        angle = 2*Math.Acos(w);
-        var s = Math.Sqrt(1 - w*w);
-        if (s < 0.001f) {
-            axis = .(1, 0, 0);
-        } else {
-            axis = .(x/s, y/s, z/s);
-        }
 
-        //Raymath.QuaternionToAxisAngle(worldTransform.rotation, &axis, &angle);
+        Raymath.QuaternionToAxisAngle(worldTransform.rotation, &axis, &angle);
         Raylib.DrawModelEx(model, worldTransform.translation, axis, angle * Raymath.RAD2DEG, worldTransform.scale, modulate);
         model.transform = saveMatrix;
     }

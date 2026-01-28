@@ -60,7 +60,7 @@ class World {
         		(JPH_Shape*)floorShape,
         		&floorPosition,
         		null, // Identity, 
-        		JPH_MotionType.Static,
+        		.Static,
         		PhysicsServer.Layers.NON_MOVING.Underlying);
 
         	// Create the actual rigid body
@@ -77,7 +77,7 @@ class World {
         		(JPH_Shape*)sphereShape,
         		&spherePosition,
         		null, // Identity,
-        		JPH_MotionType.Dynamic,
+        		.Dynamic,
         		PhysicsServer.Layers.MOVING.Underlying);
 
         	sphereId = PhysicsServer.CreateAndAddBody(sphereSettings, .Activate);
