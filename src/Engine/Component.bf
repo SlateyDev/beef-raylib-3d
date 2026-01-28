@@ -1,7 +1,6 @@
 using System;
 
 abstract class Component : BaseObject {
-    public GameObject parent { get; private set; }
     bool awakeCalled;
     bool startCalled;
 

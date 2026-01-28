@@ -30,7 +30,9 @@ class Game {
         go.transform = .(.(5, 3, 5), .(0, 0, 0, 1), .(1, 1, 1));
         var meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
-        go.AddComponent<BoxCollider>();
+        var boxCollider = go.AddComponent<BoxCollider>();
+        boxCollider.halfExtent = .(2, 2, 2);
+        go.AddComponent<RigidBody>();
         scene.[Friend]objectsInScene.Add(go);
 
         go2 = new GameObject();

@@ -12,12 +12,12 @@ Supported platforms are currently Win64 and Wasm32.
 * Cascade Shadow Maps
 * Bounding Sphere Frustum Culling
 * Jolt Physics
+* Ray Picking
+* UI w/ interaction
 
 ### Wanted before jam:
 * Basic shape collision detection
-* Ray Picking
 * Pathfinding using A*
-* UI w/ interaction
 
 ### Further research:
 * Decals

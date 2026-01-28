@@ -26,7 +26,6 @@ class GameObject : BaseObject {
     }
 
     public Scene scene { get; private set; };
-    GameObject parent;
     List<GameObject> children = new List<GameObject>() ~ DeleteContainerAndDisposeItems!(_);
     List<Component> components = new List<Component>() ~ DeleteContainerAndDisposeItems!(_);
 
