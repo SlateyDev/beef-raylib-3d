@@ -27,11 +27,12 @@ class Game {
 
     public void Start() {
         go = new GameObject();
-        go.transform = .(.(5, 3, 5), .(0, 0, 0, 1), .(1, 1, 1));
+        go.transform = .(.(5, 3, 5), Raymath.QuaternionFromAxisAngle(.(0.5f, 0, 0), 15 * Raymath.DEG2RAD), .(1, 1, 1));
         var meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         var boxCollider = go.AddComponent<BoxCollider>();
-        boxCollider.halfExtent = .(2, 2, 2);
+        boxCollider.halfExtent = .(1, 1, 1);
+        boxCollider.offset = .(0, 1f, 0);
         go.AddComponent<RigidBody>();
         scene.[Friend]objectsInScene.Add(go);
 

@@ -25,6 +25,21 @@ class GameObject : BaseObject {
         return Transform.GetWorldTransform(parent.GetWorldTransform(), transform);
     }
 
+    public void SetWorldPositionAndRotation(Vector3* position, Quaternion* rotation) {
+        if (parent == null) {
+            transform.translation = *position;
+            transform.rotation = *rotation;
+        } else {
+            var parentTransform = parent.GetWorldTransform();
+            Vector3 deltaPos = Raymath.Vector3Subtract(*position, parentTransform.translation);
+            Quaternion invParentRot = Raymath.QuaternionInvert(parentTransform.rotation);
+            Vector3 localPos = Raymath.Vector3RotateByQuaternion(deltaPos, invParentRot);
+            Quaternion localRot = Raymath.QuaternionMultiply(invParentRot, *rotation);
+            transform.translation = localPos;
+            transform.rotation = localRot;
+        }
+    }
+
     public Scene scene { get; private set; };
     List<GameObject> children = new List<GameObject>() ~ DeleteContainerAndDisposeItems!(_);
     List<Component> components = new List<Component>() ~ DeleteContainerAndDisposeItems!(_);

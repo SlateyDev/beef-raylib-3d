@@ -112,7 +112,9 @@ public static class PhysicsServer
     }
 
     public static JPH_BodyID CreateAndAddBody(JPH_BodyCreationSettings* settings, JPH_Activation activationMode) {
-        return JPH_BodyInterface_CreateAndAddBody(bodyInterface, settings, activationMode);
+        var bodyId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, settings, activationMode);
+        bodies.Add(bodyId);
+        return bodyId;
     }
 
     public static void GetLinearVelocity(uint32 bodyId, JPH_Vec3* velocity) {
@@ -135,6 +137,18 @@ public static class PhysicsServer
             steps++;
         }
         accumulator = Math.Min(accumulator, fixedTimestep * 2);
+
+        for (var bodyId in bodies) {
+            var rigidBody = Internal.UnsafeCastToObject((void*)(uint)JPH_BodyInterface_GetUserData(bodyInterface, bodyId)) as RigidBody;
+            if (rigidBody == null) continue;
+            if (rigidBody.motionType == .Dynamic) {
+                Vector3 position = .(0, 0, 0);
+                Quaternion rotation = .(0, 0, 0, 1);
+                JPH_BodyInterface_GetPositionAndRotation(bodyInterface, bodyId, &position, (JPH_Quat*)&rotation);
+                position -= rigidBody.[Friend]offset;
+                rigidBody.gameObject.SetWorldPositionAndRotation(&position, &rotation);
+            }
+        }
     }
 
     public static void GetCenterOfMassPosition(uint32 bodyId, JPH_RVec3* position) {
