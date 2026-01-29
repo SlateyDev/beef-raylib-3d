@@ -158,7 +158,10 @@ public static class PhysicsServer
                 Vector3 position = .(0, 0, 0);
                 Quaternion rotation = .(0, 0, 0, 1);
                 JPH_BodyInterface_GetPositionAndRotation(bodyInterface, bodyId, &position, (JPH_Quat*)&rotation);
-                position -= rigidBody.[Friend]offset;
+
+                Vector3 rotatedOffset = Raymath.Vector3RotateByQuaternion(rigidBody.[Friend]offset, rotation);
+                position -= rotatedOffset;
+
                 rigidBody.gameObject.SetWorldPositionAndRotation(&position, &rotation);
             }
         }

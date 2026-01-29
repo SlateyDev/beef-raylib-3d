@@ -77,6 +77,13 @@ class Game {
 
     public void Update(float frameTime) {
         if (mIsRunning) {
+            // House flipper test. Currently shows that render offset isn't being correctly set based on rotation.
+            if (Raylib.IsKeyPressed(.KEY_F)) {
+                Random rand = new Random();
+                defer delete rand;
+
+                go.GetComponent<RigidBody>().AddImpulse(.(0, 10000, 0), .((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+            }
             Transform transform = go.transform;
             //this won't do anything visible since the parent is dynamic, so the physics engine will override it each frame
             transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));

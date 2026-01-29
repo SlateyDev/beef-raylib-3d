@@ -640,7 +640,6 @@ class World {
         // Note: Adjust the path to your model files
         //let model = new Model3D("assets/models/charybdis.gltf");
         //let model = new Model3D("assets/models/Untitled.gltf");
-        ModelInstance3D modelInstance;
 
         AddRoadTile(new RoadCornerSE(), .(1, 0, -2));
 
