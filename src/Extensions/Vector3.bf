@@ -19,6 +19,10 @@ extension Vector3 {
         return Raymath.Vector3Multiply(lhs, rhs);
     }
 
+    public static Vector3 operator*(Vector3 lhs, float rhs) {
+        return Raymath.Vector3Scale(lhs, rhs);
+    }
+
     public static Vector3 operator/(Vector3 lhs, Vector3 rhs) {
         return Raymath.Vector3Divide(lhs, rhs);
     }

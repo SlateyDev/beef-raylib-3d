@@ -30,9 +30,7 @@ class Game {
         go.transform = .(.(5, 3, 5), Raymath.QuaternionFromAxisAngle(.(0.5f, 0, 0), 15 * Raymath.DEG2RAD), .(1, 1, 1));
         var meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
-        var boxCollider = go.AddComponent<BoxCollider>();
-        boxCollider.halfExtent = .(1, 1, 1);
-        boxCollider.offset = .(0, 1f, 0);
+        go.AddComponent<MeshBoundingBoxCollider>();
         go.AddComponent<RigidBody>();
         scene.[Friend]objectsInScene.Add(go);
 
@@ -54,8 +52,6 @@ class Game {
         go3.AddComponent<BoxCollider>();
         scene.[Friend]objectsInScene.Add(go3);
 
-        scene.WakeScene();
-
         // Initialize game resources
         mPlayer = new Player(.(0.0f, 1.0f, -5.0f)); // Position player slightly above the floor
         mPlayer.RotationAngle = 90f;
@@ -75,6 +71,8 @@ class Game {
         ui.elements.Add(new Text(.(float(currentScreenWidth) / 2 - 170, 20, 340, 20), "TITLE"));
         ui.elements.Add(button1);
         ui.elements.Add(button2);
+
+        scene.WakeScene();
     }
 
     public void Update(float frameTime) {

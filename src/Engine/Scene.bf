@@ -1,3 +1,4 @@
+using RaylibBeef;
 using System;
 using System.Collections;
 
@@ -65,10 +66,33 @@ class Scene {
         }
     }
 
-    public void Render() {
+    public void Render(Frustum* cameraFrustum) {
         if (!IsActive) return;
 
+        List<Renderable> renderablesToDraw = scope List<Renderable>();
+
         for (var renderable in renderables) {
+            var sphere = renderable.GetBoundingSphere();
+            if (cameraFrustum.SphereIn(&sphere.Center, sphere.Radius)) {
+                renderablesToDraw.Add(renderable);
+
+                /*//Ray Picking Example
+                var raySphereCollision = Raylib.GetRayCollisionSphere(ray, sphere.Center, sphere.Radius);
+                if (raySphereCollision.hit) {
+                    for (var meshIndex < model.mModel.meshCount) {
+                        var rayMeshCollision = Raylib.GetRayCollisionMesh(ray, model.mModel.meshes[meshIndex], Raymath.MatrixMultiply(model.mModel.transform, model.Transform()));
+                        if (rayMeshCollision.hit) {
+                            if (rayMeshCollision.distance < closestCollision.distance) {
+                                closestCollision = rayMeshCollision;
+                                closestModelIndex = modelsToDraw.Count - 1;
+                            }
+                        }
+                    }
+                }*/
+            }
+        }
+
+        for (let renderable in renderablesToDraw) {
             renderable.Render();
         }
     }

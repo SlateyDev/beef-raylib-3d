@@ -32,7 +32,8 @@ class RigidBody : Component {
             shape = (JPH_Shape*)compoundShape;
         }
 
-        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &shapePos, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, motionType, PhysicsServer.Layers.MOVING.Underlying);
+        uint32 layer = motionType == .Static ? PhysicsServer.Layers.NON_MOVING.Underlying : PhysicsServer.Layers.MOVING.Underlying;
+        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &shapePos, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, motionType, layer);
         JPH_BodyCreationSettings_SetUserData(bodyCreationSettings, (uint64)(uint)Internal.UnsafeCastToPtr(this));
         bodyId = PhysicsServer.CreateAndAddBody(bodyCreationSettings, JPH_Activation.Activate);
         PhysicsServer.JPH_BodyCreationSettings_Destroy(bodyCreationSettings);

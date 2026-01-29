@@ -8,6 +8,7 @@ class SphereCollider : Collider {
     public float radius;
 
     public override JPH_Shape* CreateShape() {
-        return (JPH_Shape*)JPH_SphereShape_Create(radius);
+        var worldTransform = gameObject.GetWorldTransform();
+        return (JPH_Shape*)JPH_SphereShape_Create(radius * Math.Max(Math.Max(worldTransform.scale.x, worldTransform.scale.y), worldTransform.scale.z));
     }
 }

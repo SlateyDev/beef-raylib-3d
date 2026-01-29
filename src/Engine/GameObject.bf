@@ -76,7 +76,7 @@ class GameObject : BaseObject {
                 castComponent.[Friend]parent = this;
                 components.Add(castComponent);
     
-                if (IsActive && castComponent.IsActive && !castComponent.[Friend]awakeCalled) {
+                if (scene != null && scene.IsActive && IsActive && castComponent.IsActive && !castComponent.[Friend]awakeCalled) {
                     castComponent.Awake();
                     castComponent.[Friend]awakeCalled = true;
                 }

@@ -395,7 +395,7 @@ class World {
 
             DrawModels();
 
-            Program.game.[Friend]scene.Render();
+            Program.game.[Friend]scene.Render(&cameraFrustum);
 
             //if (PhysicsServer.BodyIsActive(sphereId)) {
             //    JPH_Vec3* velocity= new .(0,0,0);
@@ -444,7 +444,7 @@ class World {
 
         DrawModels();
 
-        Program.game.[Friend]scene.Render();
+        Program.game.[Friend]scene.Render(&cameraFrustum);
 
         PhysicsServer.DebugDrawBodies();
 
@@ -690,74 +690,81 @@ class World {
         sedan.currentRoadSegment = roadTiles[.(5, 0, 0)];
         sedan.Start();
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_A.gltf"));
-        modelInstance.Position = .(2, 0, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        GameObject building;
+        MeshRenderer meshRenderer;
+        RigidBody rigidBody;
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_B.gltf"));
-        modelInstance.Position = .(2, 0, 0);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(2, 0, -1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_H.gltf"));
-        modelInstance.Position = .(2, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 270, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(2, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_B.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_C.gltf"));
-        modelInstance.Position = .(0, 0, -2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(2, 0, 1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_D.gltf"));
-        modelInstance.Position = .(0, 0, -1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(0, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_E.gltf"));
-        modelInstance.Position = .(0, 0, 0);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(0, 0, -1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_D.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_F.gltf"));
-        modelInstance.Position = .(0, 0, 1);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
+        building = new GameObject();
+        building.transform = .(.(0, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_E.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-        modelInstance = new ModelInstance3D(ModelManager.Get("assets/models/building_G.gltf"));
-        modelInstance.Position = .(0, 0, 2);
-        modelInstance.Scale = .(0.5f, 0.5f, 0.5f);
-        modelInstance.Rotation = .(0, 90, 0);
-        mModelInstances.Add(modelInstance);
-        CreateModelStaticPhysicsBoundingBox(modelInstance);
-    }
+        building = new GameObject();
+        building.transform = .(.(0, 0, 1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_F.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
-    public void CreateModelStaticPhysicsBoundingBox(ModelInstance3D modelInstance) {
-        var modelAABB = modelInstance.boundingBox;
-        modelAABB.min = Raymath.Vector3Multiply(modelAABB.min, modelInstance.Scale);
-        modelAABB.max = Raymath.Vector3Multiply(modelAABB.max, modelInstance.Scale);
-        var rot = Raymath.QuaternionFromAxisAngle(Raymath.Vector3Normalize(modelInstance.Rotation), Raymath.Vector3Length(modelInstance.Rotation) * Raymath.DEG2RAD);
-        var halfsize = Vector3((modelAABB.max.x - modelAABB.min.x) / 2f, (modelAABB.max.y - modelAABB.min.y) / 2f, (modelAABB.max.z - modelAABB.min.z) / 2f);
-        var center = Vector3(modelInstance.Position.x + halfsize.x + modelAABB.min.x, modelInstance.Position.y + halfsize.y + modelAABB.min.y, modelInstance.Position.z + halfsize.z + modelAABB.min.z);
-        var shape = JPH_BoxShape_Create(&halfsize, JPH_DEFAULT_CONVEX_RADIUS);
-        var bodySettings = JPH_BodyCreationSettings_Create3((JPH_Shape*)shape, &center, (JPH_Quat*)&rot, JPH_MotionType.Static, PhysicsServer.Layers.NON_MOVING.Underlying);
-        PhysicsServer.CreateAndAddBody(bodySettings, .DontActivate);
-        JPH_BodyCreationSettings_Destroy(bodySettings);
+        building = new GameObject();
+        building.transform = .(.(0, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        meshRenderer = building.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/building_G.gltf");
+        building.AddComponent<MeshBoundingBoxCollider>();
+        rigidBody = building.AddComponent<RigidBody>();
+        rigidBody.motionType = .Static;
+        Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
     }
 
     public void DrawModels() {
