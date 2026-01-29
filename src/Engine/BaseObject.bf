@@ -12,7 +12,7 @@ abstract class BaseObject : IDisposable {
     public T GetComponent<T>() where T: Component {
         for (var component in gameObject.[Friend]components) {
             if (component is T) {
-                return component;
+                return (T)component;
             }
         }
         return null;
@@ -31,13 +31,13 @@ abstract class BaseObject : IDisposable {
     public T GetComponentInChildren<T>() where T: Component {
         for (var component in gameObject.[Friend]components) {
             if (component is T) {
-                return component;
+                return (T)component;
             }
         }
         for (var child in gameObject.[Friend]children) {
             var component = child.GetComponentInChildren<T>();
             if (component != null) {
-                return component;
+                return (T)component;
             }
         }
         return null;
@@ -46,7 +46,7 @@ abstract class BaseObject : IDisposable {
     private void GetComponentsInChildrenInternal<T>(List<T> components) where T: Component {
         for (var component in gameObject.[Friend]components) {
             if (component is T) {
-                components.Add(component);
+                components.Add((T)component);
             }
         }
         for (var child in gameObject.[Friend]children) {

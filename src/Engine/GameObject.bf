@@ -31,12 +31,18 @@ class GameObject : BaseObject {
             transform.rotation = *rotation;
         } else {
             var parentTransform = parent.GetWorldTransform();
-            Vector3 deltaPos = Raymath.Vector3Subtract(*position, parentTransform.translation);
-            Quaternion invParentRot = Raymath.QuaternionInvert(parentTransform.rotation);
-            Vector3 localPos = Raymath.Vector3RotateByQuaternion(deltaPos, invParentRot);
-            Quaternion localRot = Raymath.QuaternionMultiply(invParentRot, *rotation);
-            transform.translation = localPos;
-            transform.rotation = localRot;
+            Transform childTransform = transform;
+            childTransform.translation = *position;
+            childTransform.rotation = *rotation;
+
+            transform = Transform.GetLocalTransform(parentTransform, childTransform);
+
+            //Vector3 deltaPos = Raymath.Vector3Subtract(*position, parentTransform.translation);
+            //Quaternion invParentRot = Raymath.QuaternionInvert(parentTransform.rotation);
+            //Vector3 localPos = Raymath.Vector3RotateByQuaternion(deltaPos, invParentRot);
+            //Quaternion localRot = Raymath.QuaternionMultiply(invParentRot, *rotation);
+            //transform.translation = localPos;
+            //transform.rotation = localRot;
         }
     }
 

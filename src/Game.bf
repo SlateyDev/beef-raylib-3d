@@ -80,6 +80,7 @@ class Game {
     public void Update(float frameTime) {
         if (mIsRunning) {
             Transform transform = go.transform;
+            //this won't do anything visible since the parent is dynamic, so the physics engine will override it each frame
             transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
             go.transform = transform;
 

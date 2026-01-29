@@ -129,6 +129,18 @@ public static class PhysicsServer
     }
 
     public static void Update(float frameTime) {
+        // Sync kinematic bodies from game objects
+        for (var bodyId in bodies) {
+            var rigidBody = Internal.UnsafeCastToObject((void*)(uint)JPH_BodyInterface_GetUserData(bodyInterface, bodyId)) as RigidBody;
+            if (rigidBody == null) continue;
+            if (rigidBody.motionType == .Kinematic) {
+                Transform objectWorldTransform = rigidBody.gameObject.GetWorldTransform();
+                Vector3 position = objectWorldTransform.translation + rigidBody.[Friend]offset;
+                Quaternion rotation = objectWorldTransform.rotation;
+                JPH_BodyInterface_SetPositionAndRotation(bodyInterface, bodyId, &position, (JPH_Quat*)&rotation, JPH_Activation.Activate);
+            }
+        }
+
         int32 steps = 0;
         accumulator += frameTime;
         while (accumulator >= fixedTimestep && steps < maxUpdateSteps) {
@@ -138,6 +150,7 @@ public static class PhysicsServer
         }
         accumulator = Math.Min(accumulator, fixedTimestep * 2);
 
+        // Sync dynamic bodies back to game objects
         for (var bodyId in bodies) {
             var rigidBody = Internal.UnsafeCastToObject((void*)(uint)JPH_BodyInterface_GetUserData(bodyInterface, bodyId)) as RigidBody;
             if (rigidBody == null) continue;
