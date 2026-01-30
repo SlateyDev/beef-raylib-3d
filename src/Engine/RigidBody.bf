@@ -10,7 +10,7 @@ class RigidBody : Component {
 
     JPH_BodyID bodyId;
     Vector3 offset = .(0, 0, 0);
-    
+
     public override void Awake() {
         var colliders = GetComponents<Collider>();
         defer delete colliders;

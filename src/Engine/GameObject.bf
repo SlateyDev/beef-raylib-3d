@@ -70,20 +70,15 @@ class GameObject : BaseObject {
     }
 
     public T AddComponent<T>() where T: Component {
-        switch (typeof(T).CreateObject()) {
-            case .Ok(let component):
-                var castComponent = (T)component;
-                castComponent.[Friend]parent = this;
-                components.Add(castComponent);
-    
-                if (scene != null && scene.IsActive && IsActive && castComponent.IsActive && !castComponent.[Friend]awakeCalled) {
-                    castComponent.Awake();
-                    castComponent.[Friend]awakeCalled = true;
-                }
-                return castComponent;
-            case .Err:
-                Runtime.FatalError(scope $"Unable to create component of type {typeof(T).GetName(.. scope .())}");
+        var component = new T();
+        component.[Friend]parent = this;
+        components.Add(component);
+
+        if (scene != null && scene.IsActive && IsActive && component.IsActive && !component.[Friend]awakeCalled) {
+            component.Awake();
+            component.[Friend]awakeCalled = true;
         }
+        return component;
     }
 
     private void DestroyInternal() {
