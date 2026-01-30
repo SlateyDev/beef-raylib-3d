@@ -82,7 +82,9 @@ class Game {
                 Random rand = new Random();
                 defer delete rand;
 
-                go.GetComponent<RigidBody>().AddImpulse(.(0, 10000, 0), .((float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned()));
+                var impulsePoint = Vector3((float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned());
+                impulsePoint += go.GetWorldTransform().translation;
+                go.GetComponent<RigidBody>().AddImpulse(.(0, 50000, 0), impulsePoint);
             }
 
             Transform transform = go2.transform;
