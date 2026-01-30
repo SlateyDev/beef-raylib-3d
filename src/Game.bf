@@ -82,14 +82,10 @@ class Game {
                 Random rand = new Random();
                 defer delete rand;
 
-                go.GetComponent<RigidBody>().AddImpulse(.(0, 10000, 0), .((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble()));
+                go.GetComponent<RigidBody>().AddImpulse(.(0, 10000, 0), .((float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned(), (float)rand.NextDoubleSigned()));
             }
-            Transform transform = go.transform;
-            //this won't do anything visible since the parent is dynamic, so the physics engine will override it each frame
-            transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
-            go.transform = transform;
 
-            transform = go2.transform;
+            Transform transform = go2.transform;
             transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
             go2.transform = transform;
 

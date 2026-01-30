@@ -43,10 +43,6 @@ class World {
     public this() {
         LoadModels();
 
-        //CreateObstacles();
-        Console.WriteLine("OpenGL version: {}", Rlgl.rlGetVersion());
-
-
         floorId = .();
         {
         	// Next we can create a rigid body to serve as the floor, we make a large box
@@ -211,37 +207,6 @@ class World {
         outCorners[5] = Raymath.Vector3Add(Raymath.Vector3Subtract(fc, rtF),  upF);
         outCorners[6] = Raymath.Vector3Subtract(Raymath.Vector3Subtract(fc, upF),  rtF);
         outCorners[7] = Raymath.Vector3Subtract(Raymath.Vector3Add(fc, rtF),  upF);
-    }
-
-    private void SphereInFrustum(Matrix vpMatrix, Vector3 point, float radius) {
-        var projection = Rlgl.rlGetMatrixProjection();
-        var modelView = Rlgl.rlGetMatrixModelview();
-        var viewProjMatrix = Raymath.MatrixMultiply(modelView, projection);
-
-        Vector4 r1 = .(viewProjMatrix.m0, viewProjMatrix.m4, viewProjMatrix.m8, viewProjMatrix.m12);
-        Vector4 r2 = .(viewProjMatrix.m1, viewProjMatrix.m5, viewProjMatrix.m9, viewProjMatrix.m13);
-        Vector4 r3 = .(viewProjMatrix.m2, viewProjMatrix.m6, viewProjMatrix.m10, viewProjMatrix.m14);
-        Vector4 r4 = .(viewProjMatrix.m3, viewProjMatrix.m7, viewProjMatrix.m11, viewProjMatrix.m15);
-
-        float magnitude;
-
-        Vector4 leftPlane = .(r4.x + r1.x, r4.y + r1.y, r4.z + r1.z, r4.w + r1.w);
-        magnitude = Math.Sqrt(leftPlane.x * leftPlane.x + leftPlane.y * leftPlane.y + leftPlane.z * leftPlane.z);
-        leftPlane = .(leftPlane.x / magnitude, leftPlane.y / magnitude, leftPlane.z / magnitude, leftPlane.w / magnitude);
-        Vector4 rightPlane = .(r4.x - r1.x, r4.y - r1.y, r4.z - r1.z, r4.w - r1.w);
-
-        Vector4 bottomPlane = .(r4.x + r2.x, r4.y + r2.y, r4.z + r2.z, r4.w + r2.w);
-        Vector4 topPlane = .(r4.x - r2.x, r4.y - r2.y, r4.z - r2.z, r4.w - r2.w);
-
-        Vector4 nearPlane = .(r4.x + r3.x, r4.y + r3.y, r4.z + r3.z, r4.w + r3.w);
-        Vector4 farPlane = .(r4.x - r3.x, r4.y - r3.y, r4.z - r3.z, r4.w - r3.w);
-
-        var distanceToPlane = leftPlane.x * point.x + leftPlane.y * point.y + leftPlane.z * point.z + leftPlane.w;
-        if (distanceToPlane < -radius) {
-            Console.WriteLine($"False: {distanceToPlane}");
-        } else {
-            Console.WriteLine($"True: {distanceToPlane}");
-        }
     }
 
     private void SnapOrthoToTexels(float* minX, float* maxX, float* minY, float* maxY, int mapSize) {
