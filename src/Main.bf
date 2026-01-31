@@ -23,6 +23,7 @@ class Program {
 
     public static Game game;
 
+    static float maxFrameTime = 1f / 60f * 4f;
     public static int Main() {
         Raylib.SetTraceLogLevel(.LOG_ALL);
         //Raylib.SetTraceLogCallback((logType, text, args) => {
@@ -31,7 +32,7 @@ class Program {
 
         //Raylib.SetConfigFlags(.FLAG_MSAA_4X_HINT);
         Raylib.SetConfigFlags(.FLAG_WINDOW_RESIZABLE);
-        Raylib.InitWindow(1366, 768, "Beef FPS");
+        Raylib.InitWindow(1280, 720, "Plague Doctor - Survivor");
         //Raylib.SetTargetFPS(60);
 
         game = new Game();

@@ -84,7 +84,7 @@ class CharacterController : Component {
         JPH_CharacterVirtual_SetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
 
         Vector3 desiredVelocity = Raymath.Vector3Normalize(.(inputX, 0, inputZ));
-        desiredVelocity *= moveSpeed * frameTime;
+        desiredVelocity *= moveSpeed;
         desiredVelocity = Raymath.Vector3RotateByQuaternion(desiredVelocity, characterRotation);
 
         //Vector3 currentVelocity = .(0,0,0);

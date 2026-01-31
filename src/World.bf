@@ -601,126 +601,78 @@ class World {
     }
 
     private void LoadModels() {
-        // Example: Load a GLTF model
-        // Note: Adjust the path to your model files
-        //let model = new Model3D("assets/models/charybdis.gltf");
-        //let model = new Model3D("assets/models/Untitled.gltf");
-
-        AddRoadTile(new RoadCornerSE(), .(1, 0, -2));
-
-        AddRoadTile(new RoadStraightNS(), .(1, 0, -1));
-        AddRoadTile(new RoadStraightNS(), .(1, 0, 0));
-        AddRoadTile(new RoadStraightNS(), .(1, 0, 1));
-
-        AddRoadTile(new RoadCornerNE(), .(1, 0, 2));
-
-        AddRoadTile(new RoadStraightEW(), .(2, 0, 2));
-        AddRoadTile(new RoadStraightEW(), .(3, 0, 2));
-        AddRoadTile(new RoadStraightEW(), .(4, 0, 2));
-
-        AddRoadTile(new RoadCornerNW(), .(5, 0, 2));
-
-        AddRoadTile(new RoadStraightNS(), .(5, 0, 1));
-        AddRoadTile(new RoadStraightNS(), .(5, 0, 0));
-        AddRoadTile(new RoadStraightNS(), .(5, 0, -1));
-
-        AddRoadTile(new RoadCornerSW(), .(5, 0, -2));
-
-        AddRoadTile(new RoadStraightEW(), .(4, 0, -2));
-        AddRoadTile(new RoadStraightEW(), .(3, 0, -2));
-        AddRoadTile(new RoadStraightEW(), .(2, 0, -2));
-
-        var taxi = new CarTaxi();
-        mModelInstances.Add(taxi);
-        cars.Add(taxi);
-        taxi.currentRoadSegment = roadTiles[.(1, 0, -2)];
-        taxi.Start();
-
-        var stationWagon = new CarStationWagon();
-        mModelInstances.Add(stationWagon);
-        cars.Add(stationWagon);
-        stationWagon.currentRoadSegment = roadTiles[.(5, 0, -2)];
-        stationWagon.Start();
-
-        var police = new CarPolice();
-        mModelInstances.Add(police);
-        cars.Add(police);
-        police.currentRoadSegment = roadTiles[.(2, 0, 2)];
-        police.Start();
-
-        var sedan = new CarSedan();
-        mModelInstances.Add(sedan);
-        cars.Add(sedan);
-        sedan.currentRoadSegment = roadTiles[.(5, 0, 0)];
-        sedan.Start();
-
+        Model[?] models = .(
+            ModelManager.Get("assets/models/building_A.gltf"),
+            ModelManager.Get("assets/models/building_B.gltf"),
+            ModelManager.Get("assets/models/building_C.gltf"),
+            ModelManager.Get("assets/models/building_D.gltf"),
+            ModelManager.Get("assets/models/building_E.gltf"),
+            ModelManager.Get("assets/models/building_F.gltf"),
+            ModelManager.Get("assets/models/building_G.gltf"),
+            ModelManager.Get("assets/models/building_H.gltf")
+        );
         GameObject building;
         MeshRenderer meshRenderer;
         RigidBody rigidBody;
+        Random rand = new Random();
+        defer delete rand;
 
-        building = GameObject.Instantiate(.(4, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+        for (var z = -24; z <= 24; z+=2) {
+            building = GameObject.Instantiate(.(24, 0, z), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD));
+            meshRenderer = building.AddComponent<MeshRenderer>();
+            meshRenderer.Model = models[rand.Next(models.Count)];
+            building.AddComponent<MeshBoundingBoxCollider>();
+            rigidBody = building.AddComponent<RigidBody>();
+            rigidBody.motionType = .Static;
+            rigidBody.layer = .STATIC;
 
-        building = GameObject.Instantiate(.(4, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_B.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+            building = GameObject.Instantiate(.(-24, 0, z), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
+            meshRenderer = building.AddComponent<MeshRenderer>();
+            meshRenderer.Model = models[rand.Next(models.Count)];
+            building.AddComponent<MeshBoundingBoxCollider>();
+            rigidBody = building.AddComponent<RigidBody>();
+            rigidBody.motionType = .Static;
+            rigidBody.layer = .STATIC;
 
-        building = GameObject.Instantiate(.(4, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+            for (var x = -20; x <= 20; x+=6) {
+                if (Math.Abs(z) > 20) continue;
+                if (Math.Abs(z) % 6 < 2) continue;
 
-        building = GameObject.Instantiate(.(0, 0, -4), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+                building = GameObject.Instantiate(.(x - 1, 0, z), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD));
+                meshRenderer = building.AddComponent<MeshRenderer>();
+                meshRenderer.Model = models[rand.Next(models.Count)];
+                building.AddComponent<MeshBoundingBoxCollider>();
+                rigidBody = building.AddComponent<RigidBody>();
+                rigidBody.motionType = .Static;
+                rigidBody.layer = .STATIC;
 
-        building = GameObject.Instantiate(.(0, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_D.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+                building = GameObject.Instantiate(.(x + 1, 0, z), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
+                meshRenderer = building.AddComponent<MeshRenderer>();
+                meshRenderer.Model = models[rand.Next(models.Count)];
+                building.AddComponent<MeshBoundingBoxCollider>();
+                rigidBody = building.AddComponent<RigidBody>();
+                rigidBody.motionType = .Static;
+                rigidBody.layer = .STATIC;
+            }
+        }
 
-        building = GameObject.Instantiate(.(0, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_E.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+        for (var x = -22; x <= 22; x+=2) {
+            building = GameObject.Instantiate(.(x, 0, 24), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 180 * Raymath.DEG2RAD));
+            meshRenderer = building.AddComponent<MeshRenderer>();
+            meshRenderer.Model = models[rand.Next(models.Count)];
+            building.AddComponent<MeshBoundingBoxCollider>();
+            rigidBody = building.AddComponent<RigidBody>();
+            rigidBody.motionType = .Static;
+            rigidBody.layer = .STATIC;
 
-        building = GameObject.Instantiate(.(0, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_F.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
-
-        building = GameObject.Instantiate(.(0, 0, 4), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD));
-        meshRenderer = building.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/building_G.gltf");
-        building.AddComponent<MeshBoundingBoxCollider>();
-        rigidBody = building.AddComponent<RigidBody>();
-        rigidBody.motionType = .Static;
-        rigidBody.layer = .STATIC;
+            building = GameObject.Instantiate(.(x, 0, -24), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 0 * Raymath.DEG2RAD));
+            meshRenderer = building.AddComponent<MeshRenderer>();
+            meshRenderer.Model = models[rand.Next(models.Count)];
+            building.AddComponent<MeshBoundingBoxCollider>();
+            rigidBody = building.AddComponent<RigidBody>();
+            rigidBody.motionType = .Static;
+            rigidBody.layer = .STATIC;
+        }
     }
 
     public void DrawModels() {
