@@ -83,16 +83,19 @@ class CharacterController : Component {
         characterRotation = Raymath.QuaternionMultiply(qYaw, characterRotation);*/
         JPH_CharacterVirtual_SetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
 
-        Vector3 desiredVelocity = .(0,0,0);
-        JPH_CharacterVirtual_GetLinearVelocity(characterVirtual, &desiredVelocity);
-        desiredVelocity.x = inputX * moveSpeed * frameTime;
-        desiredVelocity.z = inputZ * moveSpeed * frameTime;
+        Vector3 desiredVelocity = Raymath.Vector3Normalize(.(inputX, 0, inputZ));
+        desiredVelocity *= moveSpeed * frameTime;
         desiredVelocity = Raymath.Vector3RotateByQuaternion(desiredVelocity, characterRotation);
 
-        // Apply gravity if not grounded
+        //Vector3 currentVelocity = .(0,0,0);
+        //JPH_CharacterVirtual_GetLinearVelocity(characterVirtual, &currentVelocity);
+        //desiredVelocity.y = currentVelocity.y;
+
+        // Apply gravity if not grounded (IsSupported is true if running against a building for some reason).
         /*if (!JPH_CharacterBase_IsSupported((JPH_CharacterBase*)characterVirtual)) {
             desiredVelocity.y += -9.8f * frameTime;
         } else {
+            //Allow jump if on the ground
             if (Raylib.IsKeyPressed(.KEY_SPACE)) {
                 desiredVelocity.y = 5;
             }

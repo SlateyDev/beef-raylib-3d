@@ -52,7 +52,7 @@ class Game {
         scene.[Friend]objectsInScene.Add(cameraPivot);
 
         var playerCamera = new GameObject();
-        playerCamera.transform = .(.(0, 0, -5), Raymath.QuaternionIdentity(), .(1, 1, 1));
+        playerCamera.transform = .(.(0, 0, -8), Raymath.QuaternionIdentity(), .(1, 1, 1));
         playerCamera.[Friend]parent = cameraPivot;
         cameraPivot.[Friend]children.Add(playerCamera);
         var sceneCamera = playerCamera.AddComponent<SceneCamera>();
