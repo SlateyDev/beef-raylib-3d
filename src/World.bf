@@ -733,7 +733,7 @@ class World {
 
     public void DrawModels() {
         //Needed for Ray Picking Example
-        var ray = Raylib.GetScreenToWorldRay(Raylib.GetMousePosition(), Program.game.mPlayer.camera);
+        var ray = Raylib.GetScreenToWorldRay(Raylib.GetMousePosition(), Program.game.currentCamera.[Friend]camera);
         RayCollision closestCollision = .{distance = float.MaxValue};
         var closestModelIndex = -1;
 

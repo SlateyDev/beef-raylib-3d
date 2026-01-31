@@ -2,6 +2,8 @@ using System;
 using System.Collections;
 
 abstract class BaseObject : IDisposable {
+    private bool isActive = true;
+
     public GameObject parent { get; private set; }
     public GameObject gameObject {
         get {
@@ -60,13 +62,16 @@ abstract class BaseObject : IDisposable {
         return components;
     }
 
-    public bool IsActive {
-        get;
-        private set {
-            IsActive = value;
+    public virtual bool IsActive {
+        get {
+            return isActive;
+        }
+
+        protected set {
+            isActive = value;
             WakeInternal();
         }
-    } = true;
+    }
 
     public abstract bool IsActiveInHierarchy { get; }
 

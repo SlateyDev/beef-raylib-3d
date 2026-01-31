@@ -4,7 +4,7 @@ using game.UI;
 
 class Game {
     private bool mIsRunning;
-    public Player mPlayer;
+    public SceneCamera currentCamera;
     public World mWorld;
 
     GameObject go;
@@ -20,15 +20,41 @@ class Game {
     }
 
     public ~this() {
-        delete(mPlayer);
         delete(mWorld);
         delete(ui);
     }
 
     public void Start() {
+        MeshRenderer meshRenderer;
+
+        var player = new GameObject();
+        player.transform = .(.(2.0f, 3.0f, -2.0f), .(0, 0, 0, 1), .(1, 1, 1));
+        player.AddComponent<CharacterController>();
+        meshRenderer = player.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/car_sedan.gltf");
+        player.AddComponent<CharacterControllerDebugRenderer>();
+        scene.[Friend]objectsInScene.Add(player);
+
+        var cameraPivot = new GameObject();
+        cameraPivot.transform = .(.(0, 1, 0), Raymath.QuaternionFromAxisAngle(.(1, 0, 0), 15 * Raylib.DEG2RAD), .(1, 1, 1));
+        cameraPivot.[Friend]parent = player;
+        cameraPivot.AddComponent<CameraPitchController>();
+        //cameraController.[Friend]lookAt = player;
+        player.[Friend]children.Add(cameraPivot);
+        scene.[Friend]objectsInScene.Add(cameraPivot);
+
+        var playerCamera = new GameObject();
+        playerCamera.transform = .(.(0, 0, -3), Raymath.QuaternionIdentity(), .(1, 1, 1));
+        playerCamera.[Friend]parent = cameraPivot;
+        cameraPivot.[Friend]children.Add(playerCamera);
+        var sceneCamera = playerCamera.AddComponent<SceneCamera>();
+        playerCamera.[Friend]scene = scene;
+        sceneCamera.SetActive(true);
+        scene.[Friend]objectsInScene.Add(playerCamera);
+
         go = new GameObject();
         go.transform = .(.(5, 3, 5), Raymath.QuaternionFromAxisAngle(.(0.5f, 0, 0), 15 * Raymath.DEG2RAD), .(1, 1, 1));
-        var meshRenderer = go.AddComponent<MeshRenderer>();
+        meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         go.AddComponent<MeshBoundingBoxCollider>();
         go.AddComponent<RigidBody>();
@@ -53,8 +79,6 @@ class Game {
         scene.[Friend]objectsInScene.Add(go3);
 
         // Initialize game resources
-        mPlayer = new Player(.(0.0f, 1.0f, -5.0f)); // Position player slightly above the floor
-        mPlayer.RotationAngle = 90f;
         mWorld = new World();
         mWorld.LoadLevel("");
         ui = new UIScene();
@@ -95,11 +119,9 @@ class Game {
             transform.rotation = Raymath.QuaternionMultiply(transform.rotation, Raymath.QuaternionFromAxisAngle(.(0, 1, 0), frameTime));
             go3.transform = transform;
 
-            mPlayer.Update(frameTime);
             mWorld.Update(frameTime);
             scene.Update(frameTime);
             PhysicsServer.Update(frameTime);
-            // Check for game state changes
         }
 
         ui.Update();
@@ -112,7 +134,7 @@ class Game {
         if (mIsRunning) {
             scene.RefreshRenderables();
             // Render the world (which now includes shadow mapping)
-            mWorld.Render(mPlayer.camera);
+            mWorld.Render(currentCamera.[Friend]camera);
         }
         
         Raylib.BeginMode2D(Camera2D{zoom = 1});
