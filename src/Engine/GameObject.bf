@@ -36,13 +36,6 @@ class GameObject : BaseObject {
             childTransform.rotation = *rotation;
 
             transform = Transform.GetLocalTransform(parentTransform, childTransform);
-
-            //Vector3 deltaPos = Raymath.Vector3Subtract(*position, parentTransform.translation);
-            //Quaternion invParentRot = Raymath.QuaternionInvert(parentTransform.rotation);
-            //Vector3 localPos = Raymath.Vector3RotateByQuaternion(deltaPos, invParentRot);
-            //Quaternion localRot = Raymath.QuaternionMultiply(invParentRot, *rotation);
-            //transform.translation = localPos;
-            //transform.rotation = localRot;
         }
     }
 
@@ -66,7 +59,14 @@ class GameObject : BaseObject {
         }
     }
 
-    public static void Instantiate(GameObject original, Vector3 vector, Quaternion rotation, GameObject parent = null) {
+    public static GameObject Instantiate(Vector3 vector, Quaternion rotation, GameObject parent = null) {
+        var gameObject = new GameObject();
+        gameObject.transform = .(vector, rotation, .(1,1,1));
+        gameObject.parent = parent;
+        if (parent != null) parent.[Friend]children.Add(gameObject);
+        gameObject.scene = parent?.scene ?? Program.game.[Friend]scene;
+        gameObject.scene.[Friend]objectsInScene.Add(gameObject);
+        return gameObject;
     }
 
     public T AddComponent<T>() where T: Component {
@@ -79,6 +79,11 @@ class GameObject : BaseObject {
             component.[Friend]awakeCalled = true;
         }
         return component;
+    }
+
+    public void RemoveComponent(Component component) {
+        component.Dispose();
+        components.Remove(component);
     }
 
     private void DestroyInternal() {

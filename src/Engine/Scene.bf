@@ -5,7 +5,8 @@ using System.Collections;
 class Scene {
     public bool IsActive { get; private set; }
 
-    List<GameObject> objectsInScene = new List<GameObject>() ~ {
+    //TODO: bad this is public, but hack for jam
+    public List<GameObject> objectsInScene = new List<GameObject>() ~ {
         List<GameObject> objectsToDispose = scope List<GameObject>();
         for (var sceneObject in _) {
             if (sceneObject.[Friend]parent != null) continue;

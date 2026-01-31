@@ -27,64 +27,40 @@ class Game {
     public void Start() {
         MeshRenderer meshRenderer;
 
-        var player = new GameObject();
-        player.transform = .(.(2, 0, -2), .(0, 0, 0, 1), .(1, 1, 1));
+        var player = GameObject.Instantiate(.(2, 0, -2), Raymath.QuaternionIdentity());
         var characterController = player.AddComponent<CharacterController>();
         characterController.[Friend]halfHeight = 0.87662f * 0.5f - characterController.[Friend]radius;
         player.AddComponent<CharacterControllerDebugRenderer>();
-        scene.[Friend]objectsInScene.Add(player);
 
-        var characterRotator = new GameObject();
-        characterRotator.transform = .(.(0, 0, 0), .(0, 0, 0, 1), .(1, 1, 1));
-        characterRotator.[Friend]parent = player;
-        player.[Friend]children.Add(characterRotator);
+        var characterRotator = GameObject.Instantiate(.(0, 0, 0), Raymath.QuaternionIdentity(), player);
         characterRotator.AddComponent<CharacterRotator>();
+        characterRotator.AddComponent<CharacterAutoShooter>();
         meshRenderer = characterRotator.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/the-doctor.gltf");
-        scene.[Friend]objectsInScene.Add(characterRotator);
 
-        var cameraPivot = new GameObject();
-        cameraPivot.transform = .(.(0, 1, 0), Raymath.QuaternionFromEuler(45 * Raylib.DEG2RAD, 0, 0), .(1, 1, 1));
-        cameraPivot.[Friend]parent = player;
+        var cameraPivot = GameObject.Instantiate(.(0, 1, 0), Raymath.QuaternionFromEuler(45 * Raylib.DEG2RAD, 0, 0), player);
         //cameraPivot.AddComponent<CameraPitchController>();
         //cameraController.[Friend]lookAt = player;
-        player.[Friend]children.Add(cameraPivot);
-        scene.[Friend]objectsInScene.Add(cameraPivot);
 
-        var playerCamera = new GameObject();
-        playerCamera.transform = .(.(0, 0, -8), Raymath.QuaternionIdentity(), .(1, 1, 1));
-        playerCamera.[Friend]parent = cameraPivot;
-        cameraPivot.[Friend]children.Add(playerCamera);
+        var playerCamera = GameObject.Instantiate(.(0, 0, -8), Raymath.QuaternionIdentity(), cameraPivot);
         var sceneCamera = playerCamera.AddComponent<SceneCamera>();
-        playerCamera.[Friend]scene = scene;
         sceneCamera.SetActive(true);
-        scene.[Friend]objectsInScene.Add(playerCamera);
 
-        go = new GameObject();
-        go.transform = .(.(5, 3, 5), Raymath.QuaternionFromAxisAngle(.(0.5f, 0, 0), 15 * Raymath.DEG2RAD), .(1, 1, 1));
+        go = GameObject.Instantiate(.(5, 3, 5), Raymath.QuaternionFromAxisAngle(.(0.5f, 0, 0), 15 * Raymath.DEG2RAD));
         meshRenderer = go.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         go.AddComponent<MeshBoundingBoxCollider>();
         go.AddComponent<RigidBody>();
-        scene.[Friend]objectsInScene.Add(go);
 
-        go2 = new GameObject();
-        go2.transform = .(.(5, 5, 6), .(0, 0, 0, 1), .(1, 1, 1));
-        go2.[Friend]parent = go;
-        go.[Friend]children.Add(go2);
+        go2 = GameObject.Instantiate(.(5, 5, 6), Raymath.QuaternionIdentity(), go);
         var meshRenderer2 = go2.AddComponent<MeshRenderer>();
         meshRenderer2.Model = ModelManager.Get("assets/models/building_B.gltf");
         go2.AddComponent<BoxCollider>();
-        scene.[Friend]objectsInScene.Add(go2);
 
-        go3 = new GameObject();
-        go3.transform = .(.(2, 1, 2), .(0, 0, 0, 1), .(1, 1, 1));
-        go3.[Friend]parent = go2;
-        go2.[Friend]children.Add(go3);
+        go3 = GameObject.Instantiate(.(2, 1, 2), Raymath.QuaternionIdentity(), go2);
         var meshRenderer3 = go3.AddComponent<MeshRenderer>();
         meshRenderer3.Model = ModelManager.Get("assets/models/building_C.gltf");
         go3.AddComponent<BoxCollider>();
-        scene.[Friend]objectsInScene.Add(go3);
 
         // Initialize game resources
         mWorld = new World();

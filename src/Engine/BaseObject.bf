@@ -78,13 +78,19 @@ abstract class BaseObject : IDisposable {
     protected abstract void WakeInternal();
 
     public void Destroy(BaseObject object) {
-        if (object is Component) {
+        if (var component = object as Component) {
+            object.gameObject.RemoveComponent(component);
         } else if (var go = object as GameObject) {
             go.[Friend]DestroyInternal();
+            Program.game.[Friend]scene.objectsInScene.Remove(go);
         }
     }
 
+    bool disposed = false;
     public void Dispose() {
+        if (disposed) return;
+        disposed = true;
+
         Destroy(this);
         delete this;
     }

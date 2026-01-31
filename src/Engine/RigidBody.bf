@@ -6,6 +6,7 @@ using System.Interop;
 
 class RigidBody : Component {
     public JPH_MotionType motionType = .Dynamic;
+    public PhysicsServer.Layers layer = .MOVING;
 
     JPH_BodyID bodyId;
     Vector3 offset = .(0, 0, 0);
@@ -31,11 +32,23 @@ class RigidBody : Component {
             shape = (JPH_Shape*)compoundShape;
         }
 
-        uint32 layer = motionType == .Static ? PhysicsServer.Layers.STATIC.Underlying : PhysicsServer.Layers.MOVING.Underlying;
-        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &shapePos, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, motionType, layer);
+        var bodyCreationSettings = JPH_BodyCreationSettings_Create3(shape, &shapePos, (JPH_Quat*)&gameObject.GetWorldTransform().rotation, motionType, layer.Underlying);
         JPH_BodyCreationSettings_SetUserData(bodyCreationSettings, (uint64)(uint)Internal.UnsafeCastToPtr(this));
         bodyId = PhysicsServer.CreateAndAddBody(bodyCreationSettings, JPH_Activation.Activate);
         PhysicsServer.JPH_BodyCreationSettings_Destroy(bodyCreationSettings);
+    }
+
+    public override void OnDestroy() {
+        PhysicsServer.RemoveBody(bodyId);
+    }
+
+    public void SetLinearVelocity(Vector3 velocity) {
+        var velocity;
+        JPH_BodyInterface_SetLinearVelocity(
+            PhysicsServer.[Friend]bodyInterface,
+            bodyId,
+            &velocity
+        );
     }
 
     public void ApplyAngularImpulse(Vector3 impulse) {

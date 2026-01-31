@@ -24,7 +24,9 @@ public static class PhysicsServer
     	MOVING,
         PLAYER,
         FRIENDLY,
+        FRIENDLY_PROJECTILE,
         ENEMY,
+        ENEMY_PROJECTILE,
     	NUM_LAYERS
     };
 
@@ -87,6 +89,9 @@ public static class PhysicsServer
         JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.MOVING.Underlying);
         JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.FRIENDLY.Underlying);
         JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.ENEMY.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.ENEMY_PROJECTILE.Underlying);
+
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.ENEMY.Underlying, Layers.FRIENDLY_PROJECTILE.Underlying);
 
         JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.STATIC.Underlying);
         JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.PLAYER.Underlying);
@@ -97,7 +102,9 @@ public static class PhysicsServer
         JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.MOVING.Underlying, BroadPhaseLayers.MOVING.Underlying);
         JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.PLAYER.Underlying, BroadPhaseLayers.MOVING.Underlying);
         JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.FRIENDLY.Underlying, BroadPhaseLayers.MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.FRIENDLY_PROJECTILE.Underlying, BroadPhaseLayers.MOVING.Underlying);
         JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.ENEMY.Underlying, BroadPhaseLayers.MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.ENEMY_PROJECTILE.Underlying, BroadPhaseLayers.MOVING.Underlying);
 
         JPH_ObjectVsBroadPhaseLayerFilter* objectVsBroadPhaseLayerFilter = JPH_ObjectVsBroadPhaseLayerFilterTable_Create(broadPhaseLayerInterfaceTable, BroadPhaseLayers.NUM_LAYERS.Underlying, objectLayerPairFilterTable, Layers.NUM_LAYERS.Underlying);
 
@@ -130,6 +137,11 @@ public static class PhysicsServer
         var bodyId = JPH_BodyInterface_CreateAndAddBody(bodyInterface, settings, activationMode);
         bodies.Add(bodyId);
         return bodyId;
+    }
+
+    public static void RemoveBody(JPH_BodyID bodyId) {
+        JPH_BodyInterface_RemoveAndDestroyBody(bodyInterface, bodyId);
+        bodies.Remove(bodyId);
     }
 
     public static void GetLinearVelocity(uint32 bodyId, JPH_Vec3* velocity) {
