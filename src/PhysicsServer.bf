@@ -16,7 +16,7 @@ public static class PhysicsServer
     static float accumulator = 0f;
     static int32 maxUpdateSteps = 8;
 
-    static bool DebugDrawing = true;
+    static bool DebugDrawing = false;
 
     public enum Layers : JPH_ObjectLayer
     {
@@ -41,15 +41,19 @@ public static class PhysicsServer
     };
 
     static void DebugDrawLine(void* userData, JPH_RVec3* point1, JPH_RVec3* point2, JPH_Color color) {
+        if (!DebugDrawing) return;
+
         var color;
         Raylib.DrawLine3D(*point1, *point2, *(Color*)&color);// Raylib.GetColor((int32)color));
     }
     static void DebugDrawTriangle(void* userData, JPH_RVec3* point1, JPH_RVec3* point2, JPH_RVec3* point3, JPH_Color color, JPH_DebugRenderer_CastShadow shadow) {
+        if (!DebugDrawing) return;
+
         var color;
         Raylib.DrawTriangle3D(*point1, *point2, *point3, *(Color*)&color);
     }
     static void DebugDrawText3D(void* userData, JPH_RVec3* pos, c_char* text, JPH_Color color, float size) {
-
+        if (!DebugDrawing) return;
     }
 
     static this() {
@@ -129,6 +133,7 @@ public static class PhysicsServer
     }
 
     public static void Update(float frameTime) {
+        if (Raylib.IsKeyPressed(.KEY_EQUAL)) DebugDrawing = !DebugDrawing;
         // Sync kinematic bodies from game objects
         for (var bodyId in bodies) {
             var rigidBody = Internal.UnsafeCastToObject((void*)(uint)JPH_BodyInterface_GetUserData(bodyInterface, bodyId)) as RigidBody;
