@@ -38,7 +38,7 @@ class World {
     Frustum cameraFrustum;
 
     JPH_BodyID floorId;
-    JPH_BodyID sphereId;
+    //JPH_BodyID sphereId;
 
     public this() {
         LoadModels();
@@ -65,7 +65,7 @@ class World {
         }
 
         // Sphere
-        sphereId = .();
+        /*sphereId = .();
         {
         	JPH_SphereShape* sphereShape = JPH_SphereShape_Create(1.0f);
         	JPH_Vec3 spherePosition = .(0.6f, 5f, 1f);
@@ -78,12 +78,12 @@ class World {
 
         	sphereId = PhysicsServer.CreateAndAddBody(sphereSettings, .Activate);
         	JPH_BodyCreationSettings_Destroy(sphereSettings);
-        }
+        }*/
 
         // Now you can interact with the dynamic body, in this case we're going to give it a velocity.
         // (note that if we had used CreateBody then we could have set the velocity straight on the body before adding it to the physics system)
-        JPH_Vec3 sphereLinearVelocity = .(0.0f, 10f, 0.0f);
-        PhysicsServer.SetLinearVelocity(sphereId, &sphereLinearVelocity);
+        /*JPH_Vec3 sphereLinearVelocity = .(0.0f, 10f, 0.0f);
+        PhysicsServer.SetLinearVelocity(sphereId, &sphereLinearVelocity);*/
 
         JPH_SixDOFConstraintSettings jointSettings;
         JPH_SixDOFConstraintSettings_Init(&jointSettings);
@@ -156,10 +156,10 @@ class World {
             modelInstance.Update(frameTime);
         }
 
-        if (Raylib.IsKeyPressed(.KEY_LEFT_SHIFT)) {
+        /*if (Raylib.IsKeyPressed(.KEY_LEFT_SHIFT)) {
             JPH_Vec3 sphereLinearVelocity = .(0.0f, 5f, 0.0f);
             PhysicsServer.SetLinearVelocity(sphereId, &sphereLinearVelocity);
-        }
+        }*/
     }
 
     private void ComputeCascadeSplits(int32 numCascades, float nearPlane, float farPlane, float lambda, float* outSplits) {
@@ -351,7 +351,7 @@ class World {
             // // Raylib.BeginShaderMode(mDepthShader);
             Raylib.BeginShaderMode(mShadowShader);
             JPH_RVec3* position = new .(0,0,0);
-            PhysicsServer.GetCenterOfMassPosition(sphereId, position);
+            //PhysicsServer.GetCenterOfMassPosition(sphereId, position);
             Raylib.DrawSphere(.(position.x, position.y, position.z), 1, Raylib.RED);
             delete position;
             // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mFloorWidth, mFloorLength), Raylib.BLACK);
@@ -397,12 +397,12 @@ class World {
         cameraFrustum.Extract();
 
         Raylib.BeginShaderMode(mShadowShader);
-        JPH_RVec3* position = new .(0,0,0);
+        /*JPH_RVec3* position = new .(0,0,0);
         PhysicsServer.GetCenterOfMassPosition(sphereId, position);
         if (cameraFrustum.SphereIn(position, 1)) {
             Raylib.DrawSphere(*position, 1, Raylib.RED);
         }
-        delete position;
+        delete position;*/
         Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mFloorWidth, mFloorLength), Raylib.DARKGRAY);
         //DrawCubes(Raylib.WHITE);
         Raylib.EndShaderMode();
