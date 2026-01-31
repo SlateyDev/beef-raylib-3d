@@ -3,7 +3,6 @@ using static Jolt.Jolt;
 using RaylibBeef;
 using System;
 
-[Reflect(.DefaultConstructor), AlwaysInclude(AssumeInstantiated=true)]
 class MeshBoundingBoxCollider : Collider {
     public Vector3 halfExtent;
 

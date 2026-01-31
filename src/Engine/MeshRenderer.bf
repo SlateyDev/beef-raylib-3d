@@ -1,7 +1,6 @@
 using RaylibBeef;
 using System;
 
-[Reflect(.DefaultConstructor), AlwaysInclude(AssumeInstantiated=true)]
 class MeshRenderer : Renderable {
     private Model model;
     public Color modulate { get; set; } = Raylib.WHITE;

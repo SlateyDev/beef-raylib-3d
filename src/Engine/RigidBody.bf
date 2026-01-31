@@ -4,7 +4,6 @@ using RaylibBeef;
 using System;
 using System.Interop;
 
-[Reflect(.DefaultConstructor), AlwaysInclude(AssumeInstantiated=true)]
 class RigidBody : Component {
     public JPH_MotionType motionType = .Dynamic;
 
