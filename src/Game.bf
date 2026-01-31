@@ -28,10 +28,11 @@ class Game {
         MeshRenderer meshRenderer;
 
         var player = new GameObject();
-        player.transform = .(.(2.0f, 3.0f, -2.0f), .(0, 0, 0, 1), .(1, 1, 1));
-        player.AddComponent<CharacterController>();
+        player.transform = .(.(2, 0, -2), .(0, 0, 0, 1), .(1, 1, 1));
+        var characterController = player.AddComponent<CharacterController>();
+        characterController.[Friend]halfHeight = 0.87662f * 0.5f - characterController.[Friend]radius;
         meshRenderer = player.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/car_sedan.gltf");
+        meshRenderer.Model = ModelManager.Get("assets/models/the-doctor.gltf");
         player.AddComponent<CharacterControllerDebugRenderer>();
         scene.[Friend]objectsInScene.Add(player);
 

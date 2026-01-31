@@ -659,7 +659,7 @@ class World {
         RigidBody rigidBody;
 
         building = new GameObject();
-        building.transform = .(.(2, 0, -1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(4, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_A.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -668,7 +668,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(2, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(4, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_B.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -677,7 +677,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(2, 0, 1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(4, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 270 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -686,7 +686,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(0, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(0, 0, -4), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_C.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -695,7 +695,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(0, 0, -1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(0, 0, -2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_D.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -704,7 +704,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(0, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(0, 0, 0), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_E.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -713,7 +713,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(0, 0, 1), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(0, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_F.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();
@@ -722,7 +722,7 @@ class World {
         Program.game.[Friend]scene.[Friend]objectsInScene.Add(building);
 
         building = new GameObject();
-        building.transform = .(.(0, 0, 2), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(0.5f, 0.5f, 0.5f));
+        building.transform = .(.(0, 0, 4), Raymath.QuaternionFromAxisAngle(.(0, 1, 0), 90 * Raymath.DEG2RAD), .(1, 1, 1));
         meshRenderer = building.AddComponent<MeshRenderer>();
         meshRenderer.Model = ModelManager.Get("assets/models/building_G.gltf");
         building.AddComponent<MeshBoundingBoxCollider>();

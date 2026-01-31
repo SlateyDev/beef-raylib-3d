@@ -6,6 +6,7 @@ using System;
 class CharacterController : Component {
     JPH_BodyID bodyId;
     JPH_CharacterVirtual* characterVirtual;
+    JPH_CharacterContactListener* characterContactListener;
     JPH_Shape* capsuleShape;
 
     float moveSpeed = 400;
@@ -26,12 +27,35 @@ class CharacterController : Component {
         var characterVirtualSettings = new JPH_CharacterVirtualSettings();
         JPH_CharacterVirtualSettings_Init(characterVirtualSettings);
         var worldTransform = gameObject.GetWorldTransform();
-        var position = worldTransform.translation;
+        var position = worldTransform.translation + .(0, halfHeight + radius, 0);
         var rotation = worldTransform.rotation;
 
         characterVirtual = JPH_CharacterVirtual_Create(characterVirtualSettings, &position, (JPH_Quat*)&rotation, (uint64)(uint)Internal.UnsafeCastToPtr(this), PhysicsServer.[Friend]system);
-        JPH_CharacterVirtual_SetShape(characterVirtual, capsuleShape, 0.05f, PhysicsServer.Layers.MOVING.Underlying, PhysicsServer.[Friend]system, null, null);
+        JPH_CharacterVirtual_SetShape(characterVirtual, capsuleShape, 0.05f, PhysicsServer.Layers.PLAYER.Underlying, PhysicsServer.[Friend]system, null, null);
+
+        characterContactListener = JPH_CharacterContactListener_Create(null);
+        JPH_CharacterContactListener_SetProcs(&contactListenerProcs);
+        JPH_CharacterVirtual_SetListener(characterVirtual, characterContactListener);
     }
+
+    public override void OnDestroy() {
+        JPH_CharacterContactListener_Destroy(characterContactListener);
+    }
+
+    JPH_CharacterContactListener_Procs contactListenerProcs = .{
+        /*OnContactValidate = (userData, character, bodyID2, subShapeID2) => {
+            Console.WriteLine($"Validate {bodyID2}");
+            return JPH_BodyInterface_GetMotionType(PhysicsServer.[Friend]bodyInterface, bodyID2) != .Dynamic;
+        },*/
+
+        OnContactAdded = (userData, character, bodyID2, subShapeID2, contactPoint, contactNormal, ioSettings) => {
+            if (JPH_BodyInterface_GetMotionType(PhysicsServer.[Friend]bodyInterface, bodyID2) == .Dynamic) {
+                Vector3 impulse = *contactNormal;
+                impulse *= 100000;
+                JPH_BodyInterface_AddImpulse2(PhysicsServer.[Friend]bodyInterface, bodyID2, &impulse, contactPoint);
+            }
+        }
+    };
 
     public override void Update(float frameTime) {
         HandleMouseInput();
@@ -66,13 +90,13 @@ class CharacterController : Component {
         desiredVelocity = Raymath.Vector3RotateByQuaternion(desiredVelocity, characterRotation);
 
         // Apply gravity if not grounded
-        if (!JPH_CharacterBase_IsSupported((JPH_CharacterBase*)characterVirtual)) {
+        /*if (!JPH_CharacterBase_IsSupported((JPH_CharacterBase*)characterVirtual)) {
             desiredVelocity.y += -9.8f * frameTime;
         } else {
             if (Raylib.IsKeyPressed(.KEY_SPACE)) {
                 desiredVelocity.y = 5;
             }
-        }
+        }*/
 
         JPH_CharacterVirtual_SetLinearVelocity(characterVirtual, &desiredVelocity);
 
