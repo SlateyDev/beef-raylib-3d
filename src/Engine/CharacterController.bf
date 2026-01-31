@@ -78,7 +78,7 @@ class CharacterController : Component {
 
         JPH_CharacterVirtual_Update(characterVirtual,
             frameTime,
-            PhysicsServer.Layers.MOVING.Underlying,
+            PhysicsServer.Layers.PLAYER.Underlying,
             PhysicsServer.[Friend]system,
             null,
             null

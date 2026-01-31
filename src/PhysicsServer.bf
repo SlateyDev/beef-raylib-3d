@@ -20,8 +20,11 @@ public static class PhysicsServer
 
     public enum Layers : JPH_ObjectLayer
     {
-    	NON_MOVING,
+    	STATIC,
     	MOVING,
+        PLAYER,
+        FRIENDLY,
+        ENEMY,
     	NUM_LAYERS
     };
 
@@ -80,13 +83,21 @@ public static class PhysicsServer
 
         // We use only 2 layers: one for non-moving objects and one for moving objects
         JPH_ObjectLayerPairFilter* objectLayerPairFilterTable = JPH_ObjectLayerPairFilterTable_Create(Layers.NUM_LAYERS.Underlying);
-        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.NON_MOVING.Underlying, Layers.MOVING.Underlying);
-        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.NON_MOVING.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.STATIC.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.MOVING.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.FRIENDLY.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.PLAYER.Underlying, Layers.ENEMY.Underlying);
+
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.STATIC.Underlying);
+        JPH_ObjectLayerPairFilterTable_EnableCollision(objectLayerPairFilterTable, Layers.MOVING.Underlying, Layers.PLAYER.Underlying);
 
         // We use a 1-to-1 mapping between object layers and broadphase layers
         JPH_BroadPhaseLayerInterface* broadPhaseLayerInterfaceTable = JPH_BroadPhaseLayerInterfaceTable_Create(Layers.NUM_LAYERS.Underlying, BroadPhaseLayers.NUM_LAYERS.Underlying);
-        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.NON_MOVING.Underlying, BroadPhaseLayers.NON_MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.STATIC.Underlying, BroadPhaseLayers.NON_MOVING.Underlying);
         JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.MOVING.Underlying, BroadPhaseLayers.MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.PLAYER.Underlying, BroadPhaseLayers.MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.FRIENDLY.Underlying, BroadPhaseLayers.MOVING.Underlying);
+        JPH_BroadPhaseLayerInterfaceTable_MapObjectToBroadPhaseLayer(broadPhaseLayerInterfaceTable, Layers.ENEMY.Underlying, BroadPhaseLayers.MOVING.Underlying);
 
         JPH_ObjectVsBroadPhaseLayerFilter* objectVsBroadPhaseLayerFilter = JPH_ObjectVsBroadPhaseLayerFilterTable_Create(broadPhaseLayerInterfaceTable, BroadPhaseLayers.NUM_LAYERS.Underlying, objectLayerPairFilterTable, Layers.NUM_LAYERS.Underlying);
 

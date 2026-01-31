@@ -57,7 +57,7 @@ class World {
         		&floorPosition,
         		null, // Identity, 
         		.Static,
-        		PhysicsServer.Layers.NON_MOVING.Underlying);
+        		PhysicsServer.Layers.STATIC.Underlying);
 
         	// Create the actual rigid body
         	floorId = PhysicsServer.CreateAndAddBody(floorSettings, .DontActivate);
