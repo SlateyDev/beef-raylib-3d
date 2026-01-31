@@ -9,7 +9,7 @@ class CharacterController : Component {
     JPH_CharacterContactListener* characterContactListener;
     JPH_Shape* capsuleShape;
 
-    float moveSpeed = 400;
+    float moveSpeed = 500;
     float halfHeight = 0.9f;
     float radius = 0.3f;
 
@@ -76,11 +76,11 @@ class CharacterController : Component {
             inputZ -= 1;
         }
 
-        Quaternion characterRotation = .(0,0,0,1);
-        JPH_CharacterVirtual_GetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
+        Quaternion characterRotation = Raymath.QuaternionFromEuler(0, 45 * Raylib.DEG2RAD, 0);
+        /*JPH_CharacterVirtual_GetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
         Quaternion qYaw = Raymath.QuaternionFromAxisAngle(.(0,1,0), deltaYaw);
         deltaYaw = 0;
-        characterRotation = Raymath.QuaternionMultiply(qYaw, characterRotation);
+        characterRotation = Raymath.QuaternionMultiply(qYaw, characterRotation);*/
         JPH_CharacterVirtual_SetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
 
         Vector3 desiredVelocity = .(0,0,0);

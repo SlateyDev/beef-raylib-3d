@@ -31,21 +31,28 @@ class Game {
         player.transform = .(.(2, 0, -2), .(0, 0, 0, 1), .(1, 1, 1));
         var characterController = player.AddComponent<CharacterController>();
         characterController.[Friend]halfHeight = 0.87662f * 0.5f - characterController.[Friend]radius;
-        meshRenderer = player.AddComponent<MeshRenderer>();
-        meshRenderer.Model = ModelManager.Get("assets/models/the-doctor.gltf");
         player.AddComponent<CharacterControllerDebugRenderer>();
         scene.[Friend]objectsInScene.Add(player);
 
+        var characterRotator = new GameObject();
+        characterRotator.transform = .(.(0, 0, 0), .(0, 0, 0, 1), .(1, 1, 1));
+        characterRotator.[Friend]parent = player;
+        player.[Friend]children.Add(characterRotator);
+        characterRotator.AddComponent<CharacterRotator>();
+        meshRenderer = characterRotator.AddComponent<MeshRenderer>();
+        meshRenderer.Model = ModelManager.Get("assets/models/the-doctor.gltf");
+        scene.[Friend]objectsInScene.Add(characterRotator);
+
         var cameraPivot = new GameObject();
-        cameraPivot.transform = .(.(0, 1, 0), Raymath.QuaternionFromAxisAngle(.(1, 0, 0), 15 * Raylib.DEG2RAD), .(1, 1, 1));
+        cameraPivot.transform = .(.(0, 1, 0), Raymath.QuaternionFromEuler(45 * Raylib.DEG2RAD, 0, 0), .(1, 1, 1));
         cameraPivot.[Friend]parent = player;
-        cameraPivot.AddComponent<CameraPitchController>();
+        //cameraPivot.AddComponent<CameraPitchController>();
         //cameraController.[Friend]lookAt = player;
         player.[Friend]children.Add(cameraPivot);
         scene.[Friend]objectsInScene.Add(cameraPivot);
 
         var playerCamera = new GameObject();
-        playerCamera.transform = .(.(0, 0, -3), Raymath.QuaternionIdentity(), .(1, 1, 1));
+        playerCamera.transform = .(.(0, 0, -5), Raymath.QuaternionIdentity(), .(1, 1, 1));
         playerCamera.[Friend]parent = cameraPivot;
         cameraPivot.[Friend]children.Add(playerCamera);
         var sceneCamera = playerCamera.AddComponent<SceneCamera>();
