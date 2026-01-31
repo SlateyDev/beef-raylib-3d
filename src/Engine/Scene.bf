@@ -66,12 +66,13 @@ class Scene {
         }
     }
 
-    public void Render(Frustum* cameraFrustum) {
+    public void Render(Frustum* cameraFrustum, bool shadowRender = false) {
         if (!IsActive) return;
 
         List<Renderable> renderablesToDraw = scope List<Renderable>();
 
         for (var renderable in renderables) {
+            if (shadowRender && !renderable.hasShadow) continue;
             var sphere = renderable.GetBoundingSphere();
             if (cameraFrustum.SphereIn(&sphere.Center, sphere.Radius)) {
                 renderablesToDraw.Add(renderable);

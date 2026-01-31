@@ -360,7 +360,7 @@ class World {
 
             DrawModels();
 
-            Program.game.[Friend]scene.Render(&cameraFrustum);
+            Program.game.[Friend]scene.Render(&cameraFrustum, true);
 
             //if (PhysicsServer.BodyIsActive(sphereId)) {
             //    JPH_Vec3* velocity= new .(0,0,0);

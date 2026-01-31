@@ -3,6 +3,7 @@ using System;
 
 abstract class Renderable : Component {
     public BoundingSphere boundingSphere;
+    public bool hasShadow = true;
 
     public struct BoundingSphere {
         public Vector3 Center;
