@@ -82,7 +82,7 @@ abstract class BaseObject : IDisposable {
             object.gameObject.RemoveComponent(component);
         } else if (var go = object as GameObject) {
             go.[Friend]DestroyInternal();
-            Program.game.[Friend]scene.objectsInScene.Remove(go);
+            Program.game.[Friend]scene.[Friend]objectsInScene.Remove(go);
         }
     }
 

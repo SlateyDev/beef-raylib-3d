@@ -349,14 +349,14 @@ class World {
             cameraFrustum.Extract();
 
             // // Raylib.BeginShaderMode(mDepthShader);
-            Raylib.BeginShaderMode(mShadowShader);
-            JPH_RVec3* position = new .(0,0,0);
+            //Raylib.BeginShaderMode(mShadowShader);
+            //JPH_RVec3* position = new .(0,0,0);
             //PhysicsServer.GetCenterOfMassPosition(sphereId, position);
-            Raylib.DrawSphere(.(position.x, position.y, position.z), 1, Raylib.RED);
-            delete position;
+            //Raylib.DrawSphere(.(position.x, position.y, position.z), 1, Raylib.RED);
+            //delete position;
             // Raylib.DrawPlane(.(0.0f, 0.0f, 0.0f), .(mFloorWidth, mFloorLength), Raylib.BLACK);
             // // DrawCubes(Raylib.BLACK);
-            Raylib.EndShaderMode();
+            //Raylib.EndShaderMode();
 
             DrawModels();
 

@@ -5,8 +5,7 @@ using System.Collections;
 class Scene {
     public bool IsActive { get; private set; }
 
-    //TODO: bad this is public, but hack for jam
-    public List<GameObject> objectsInScene = new List<GameObject>() ~ {
+    List<GameObject> objectsInScene = new List<GameObject>() ~ {
         List<GameObject> objectsToDispose = scope List<GameObject>();
         for (var sceneObject in _) {
             if (sceneObject.[Friend]parent != null) continue;
@@ -19,10 +18,6 @@ class Scene {
     }
 
     public void WakeScene() {
-        for (var sceneObject in objectsInScene) {
-            sceneObject.[Friend]scene = this;
-        }
-
         IsActive = true;
         for (var sceneObject in objectsInScene) {
             sceneObject.[Friend]WakeInternal();
@@ -39,7 +34,7 @@ class Scene {
         }
     }
 
-    List<Renderable> renderables = new List<Renderable>() ~ delete _;
+    List<Renderable> renderables = new List<Renderable>(1024) ~ delete _;
 
     private void TraverseGameObjectRenderables(GameObject parent) {
         AddRenderables(parent);
