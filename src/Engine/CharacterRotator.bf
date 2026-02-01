@@ -1,6 +1,7 @@
 using Jolt;
 using static Jolt.Jolt;
 using RaylibBeef;
+using SDL2;
 using System;
 
 class CharacterRotator : Component {
@@ -36,6 +37,15 @@ class CharacterRotator : Component {
         }
         if (Raylib.IsKeyDown(.KEY_S)) {
             inputZ -= 1;
+        }
+
+        var gameController = SDL.GameControllerFromPlayerIndex(0);
+        if (gameController != null) {
+            var gamepadX = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .RightX));
+            var gamepadY = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .RightY));
+
+            if (Math.Abs(gamepadX) > 0) inputX = gamepadX;
+            if (Math.Abs(gamepadY) > 0) inputZ = gamepadY;
         }
 
         Vector3 moveDir = .(inputX, 0, inputZ);

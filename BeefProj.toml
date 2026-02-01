@@ -1,5 +1,5 @@
 FileVersion = 1
-Dependencies = {corlib = "*", raylib-beef = "*", Jolt = "*"}
+Dependencies = {corlib = "*", raylib-beef = "*", Jolt = "*", SDL2 = "*"}
 
 [Project]
 Name = "beef-raylib-3d-game"

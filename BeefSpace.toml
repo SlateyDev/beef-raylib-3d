@@ -1,6 +1,6 @@
 FileVersion = 1
-Projects = {beef-raylib-3d-game = {Path = "."}, raylib-beef = "*", Jolt = "*"}
-Unlocked = ["raylib-beef", "Jolt"]
+Projects = {beef-raylib-3d-game = {Path = "."}, raylib-beef = "*", Jolt = "*", SDL2 = "*"}
+Unlocked = ["raylib-beef", "Jolt", "SDL2"]
 
 [Workspace]
 StartupProject = "beef-raylib-3d-game"

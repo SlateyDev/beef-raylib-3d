@@ -1,6 +1,7 @@
 using Jolt;
 using static Jolt.Jolt;
 using RaylibBeef;
+using SDL2;
 using System;
 
 class CharacterController : Component {
@@ -9,7 +10,7 @@ class CharacterController : Component {
     JPH_CharacterContactListener* characterContactListener;
     JPH_Shape* capsuleShape;
 
-    float moveSpeed = 500;
+    float moveSpeed = 2;
     float halfHeight = 0.9f;
     float radius = 0.3f;
 
@@ -74,6 +75,15 @@ class CharacterController : Component {
         }
         if (Raylib.IsKeyDown(.KEY_S)) {
             inputZ -= 1;
+        }
+
+        var gameController = SDL.GameControllerFromPlayerIndex(0);
+        if (gameController != null) {
+            var gamepadX = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .LeftX));
+            var gamepadY = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .LeftY));
+
+            if (Math.Abs(gamepadX) > 0) inputX = gamepadX;
+            if (Math.Abs(gamepadY) > 0) inputZ = gamepadY;
         }
 
         Quaternion characterRotation = Raymath.QuaternionFromEuler(0, 45 * Raylib.DEG2RAD, 0);
