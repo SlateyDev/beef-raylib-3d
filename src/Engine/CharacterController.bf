@@ -77,13 +77,17 @@ class CharacterController : Component {
             inputZ -= 1;
         }
 
-        var gameController = SDL.GameControllerFromPlayerIndex(0);
+        Vector3 desiredVelocity = Raymath.Vector3Normalize(.(inputX, 0, inputZ));
+
+        var gameController = Program.[Friend]gameController;
         if (gameController != null) {
             var gamepadX = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .LeftX));
             var gamepadY = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .LeftY));
 
-            if (Math.Abs(gamepadX) > 0) inputX = gamepadX;
-            if (Math.Abs(gamepadY) > 0) inputZ = gamepadY;
+            if (Math.Abs(gamepadX) > 0 || Math.Abs(gamepadY) > 0) {
+                desiredVelocity.x = gamepadX;
+                desiredVelocity.z = gamepadY;
+            }
         }
 
         Quaternion characterRotation = Raymath.QuaternionFromEuler(0, 45 * Raylib.DEG2RAD, 0);
@@ -93,7 +97,6 @@ class CharacterController : Component {
         characterRotation = Raymath.QuaternionMultiply(qYaw, characterRotation);*/
         JPH_CharacterVirtual_SetRotation(characterVirtual, (JPH_Quat*)&characterRotation);
 
-        Vector3 desiredVelocity = Raymath.Vector3Normalize(.(inputX, 0, inputZ));
         desiredVelocity *= moveSpeed;
         desiredVelocity = Raymath.Vector3RotateByQuaternion(desiredVelocity, characterRotation);
 

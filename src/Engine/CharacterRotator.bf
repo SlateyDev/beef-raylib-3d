@@ -39,14 +39,18 @@ class CharacterRotator : Component {
             inputZ -= 1;
         }
 
-        var gameController = SDL.GameControllerFromPlayerIndex(0);
+        var gameController = Program.[Friend]gameController;
         if (gameController != null) {
             var gamepadX = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .RightX));
             var gamepadY = -GamepadHelper.normalizeGamepadAxis(SDL.GameControllerGetAxis(gameController, .RightY));
 
-            if (Math.Abs(gamepadX) > 0) inputX = gamepadX;
-            if (Math.Abs(gamepadY) > 0) inputZ = gamepadY;
+            if (Math.Abs(gamepadX) > 0 || Math.Abs(gamepadY) > 0) {
+                inputX = gamepadX;
+                inputZ = gamepadY;
+            }
         }
+
+        if (!(Math.Abs(inputX) > 0 || Math.Abs(inputZ) > 0)) return;
 
         Vector3 moveDir = .(inputX, 0, inputZ);
         if (moveDir.x * moveDir.x + moveDir.z * moveDir.z > 0.0f) {
