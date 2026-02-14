@@ -1,9 +1,9 @@
 using System;
 using System.Collections;
 
-abstract class BaseObject : IDisposable {
+abstract class BaseObject {
     private bool isActive = true;
-    private bool isDisposed = false;
+    private bool isDestroyed = false;
 
     public GameObject parent { get; private set; }
     public GameObject gameObject {
@@ -65,11 +65,11 @@ abstract class BaseObject : IDisposable {
 
     public virtual bool IsActive {
         get {
-            return !isDisposed && isActive;
+            return !isDestroyed && isActive;
         }
 
         protected set {
-            if (isDisposed) return;
+            if (isDestroyed) return;
 
             isActive = value;
             WakeInternal();
@@ -80,34 +80,27 @@ abstract class BaseObject : IDisposable {
 
     protected abstract void WakeInternal();
 
-    public virtual void OnDestroy() {}
-
     public void Destroy() {
-        if (isDisposed) return;
-
-        OnDestroy();
+        if (isDestroyed) return;
 
         if (var component = this as Component) {
+            component.OnDestroy();
             Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(component);
         } else if (var go = this as GameObject) {
             for (var child in go.[Friend]children) {
                 child.Destroy();
             }
             for (var component in go.[Friend]components) {
-                component.OnDestroy();
-                component.Dispose();
+                component.isDestroyed = true;
+                component.isActive = false;
             }
             Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(go);
         }
-        Dispose();
+        isDestroyed = true;
+        isActive = false;
     }
 
     public static void Destroy(BaseObject object) {
         object.Destroy();
-    }
-
-    public void Dispose() {
-        isDisposed = true;
-        isActive = false;
     }
 }

@@ -43,7 +43,6 @@ class GameObject : BaseObject {
     List<GameObject> children = new List<GameObject>() ~ {
         while (!children.IsEmpty) {
             var child = children.PopBack();
-            child.Dispose();
             delete child;
         }
         delete _;
@@ -51,7 +50,7 @@ class GameObject : BaseObject {
     List<Component> components = new List<Component>() ~ {
         while (!components.IsEmpty) {
             var component = components.PopBack();
-            component.Dispose();
+            component.OnDestroy();
             delete component;
         }
         delete _;

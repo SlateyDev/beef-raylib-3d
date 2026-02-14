@@ -30,4 +30,5 @@ abstract class Component : BaseObject {
     //public virtual void LateUpdate(float frameTime) {}
 
     public virtual void OnDisable() {}
+    public virtual void OnDestroy() {}
 }

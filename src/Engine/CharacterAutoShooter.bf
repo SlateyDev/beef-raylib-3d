@@ -9,7 +9,7 @@ class CharacterAutoShooter : Component {
 
     RigidBody rigidBody;
 
-    List<GameObject> projectiles = new List<GameObject>() ~ DeleteContainerAndDisposeItems!(_);
+    List<GameObject> projectiles = new List<GameObject>() ~ delete _;
 
     void OnProjectileDestroyed(GameObject projectile) {
         projectiles.Remove(projectile);

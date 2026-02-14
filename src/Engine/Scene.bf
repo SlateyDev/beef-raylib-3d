@@ -11,9 +11,6 @@ class Scene {
             if (sceneObject.[Friend]parent != null) continue;
             objectsToDispose.Add(sceneObject);
         }
-        for (var sceneObject in objectsToDispose) {
-            sceneObject.Dispose();
-        }
         ClearAndDeleteItems!(objectsToDispose);
         delete _;
     }
