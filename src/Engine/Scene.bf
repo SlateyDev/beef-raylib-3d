@@ -36,16 +36,16 @@ class Scene {
             sceneObject.Update(frameTime);
         }
 
-        while (!objectsToCleanup.IsEmpty) {
-            var obj = objectsToCleanup.PopBack();
-            if (var component = obj as Component) {
-                component.parent.[Friend]components.Remove(component);
-                delete component;
-            } else if (var go = obj as GameObject) {
-                if (go.parent != null) go.parent.[Friend]children.Remove(go);
-                objectsInScene.Remove(go);
-                delete go;
+        if (!objectsToCleanup.IsEmpty) {
+            for (var obj in objectsToCleanup) {
+                if (var component = obj as Component) {
+                    component.parent.[Friend]components.Remove(component);
+                } else if (var go = obj as GameObject) {
+                    if (go.parent != null) go.parent.[Friend]children.Remove(go);
+                    objectsInScene.Remove(go);
+                }
             }
+            ClearAndDeleteItems!(objectsToCleanup);
         }
     }
 

@@ -90,13 +90,14 @@ abstract class BaseObject : IDisposable {
         if (var component = this as Component) {
             Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(component);
         } else if (var go = this as GameObject) {
-            Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(go);
             for (var child in go.[Friend]children) {
                 child.Destroy();
             }
             for (var component in go.[Friend]components) {
-                component.Destroy();
+                component.OnDestroy();
+                component.Dispose();
             }
+            Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(go);
         }
         Dispose();
     }
@@ -106,7 +107,6 @@ abstract class BaseObject : IDisposable {
     }
 
     public void Dispose() {
-        if (isDisposed) return;
         isDisposed = true;
         isActive = false;
     }
