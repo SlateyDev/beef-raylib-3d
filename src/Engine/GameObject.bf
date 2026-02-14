@@ -73,7 +73,7 @@ class GameObject : BaseObject {
     }
 
     public static GameObject Instantiate(Vector3 vector, Quaternion rotation, GameObject parent = null) {
-        if (parent != null && parent.[Friend]isDisposed) Runtime.FatalError("Tried to instantiate a GameObject with a disposed parent");
+        if (parent != null && parent.[Friend]isDestroyed) Runtime.FatalError("Tried to instantiate a GameObject with a destroyed parent");
 
         var gameObject = new GameObject();
         gameObject.transform = .(vector, rotation, .(1,1,1));
