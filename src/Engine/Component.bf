@@ -30,15 +30,4 @@ abstract class Component : BaseObject {
     //public virtual void LateUpdate(float frameTime) {}
 
     public virtual void OnDisable() {}
-    public virtual void OnDestroy() {}
-
-    bool disposed = false;
-    public new void Dispose() {
-        if (disposed) return;
-        disposed = true;
-
-        OnDestroy();
-
-        base.Dispose();
-    }
 }

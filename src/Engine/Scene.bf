@@ -5,7 +5,7 @@ using System.Collections;
 class Scene {
     public bool IsActive { get; private set; }
 
-    List<GameObject> objectsInScene = new List<GameObject>() ~ {
+    List<GameObject> objectsInScene = new List<GameObject>(1024) ~ {
         List<GameObject> objectsToDispose = scope List<GameObject>();
         for (var sceneObject in _) {
             if (sceneObject.[Friend]parent != null) continue;
@@ -14,8 +14,11 @@ class Scene {
         for (var sceneObject in objectsToDispose) {
             sceneObject.Dispose();
         }
+        ClearAndDeleteItems!(objectsToDispose);
         delete _;
     }
+
+    List<BaseObject> objectsToCleanup = new List<BaseObject>(32) ~ delete _;
 
     public void WakeScene() {
         IsActive = true;
@@ -31,6 +34,18 @@ class Scene {
             if (sceneObject.[Friend]parent != null) continue;
             if (!sceneObject.IsActive) continue;
             sceneObject.Update(frameTime);
+        }
+
+        while (!objectsToCleanup.IsEmpty) {
+            var obj = objectsToCleanup.PopBack();
+            if (var component = obj as Component) {
+                component.parent.[Friend]components.Remove(component);
+                delete component;
+            } else if (var go = obj as GameObject) {
+                if (go.parent != null) go.parent.[Friend]children.Remove(go);
+                objectsInScene.Remove(go);
+                delete go;
+            }
         }
     }
 

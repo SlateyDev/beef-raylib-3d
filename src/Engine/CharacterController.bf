@@ -25,7 +25,7 @@ class CharacterController : Component {
     public override void Awake() {
         capsuleShape = (JPH_Shape*)JPH_CapsuleShape_Create(halfHeight, radius);
 
-        var characterVirtualSettings = new JPH_CharacterVirtualSettings();
+        var characterVirtualSettings = scope JPH_CharacterVirtualSettings();
         JPH_CharacterVirtualSettings_Init(characterVirtualSettings);
         var worldTransform = gameObject.GetWorldTransform();
         var position = worldTransform.translation + .(0, halfHeight + radius, 0);

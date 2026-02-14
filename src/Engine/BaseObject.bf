@@ -3,6 +3,7 @@ using System.Collections;
 
 abstract class BaseObject : IDisposable {
     private bool isActive = true;
+    private bool isDisposed = false;
 
     public GameObject parent { get; private set; }
     public GameObject gameObject {
@@ -64,10 +65,12 @@ abstract class BaseObject : IDisposable {
 
     public virtual bool IsActive {
         get {
-            return isActive;
+            return !isDisposed && isActive;
         }
 
         protected set {
+            if (isDisposed) return;
+
             isActive = value;
             WakeInternal();
         }
@@ -77,21 +80,34 @@ abstract class BaseObject : IDisposable {
 
     protected abstract void WakeInternal();
 
-    public void Destroy(BaseObject object) {
-        if (var component = object as Component) {
-            object.gameObject.RemoveComponent(component);
-        } else if (var go = object as GameObject) {
-            go.[Friend]DestroyInternal();
-            Program.game.[Friend]scene.[Friend]objectsInScene.Remove(go);
+    public virtual void OnDestroy() {}
+
+    public void Destroy() {
+        if (isDisposed) return;
+
+        OnDestroy();
+
+        if (var component = this as Component) {
+            Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(component);
+        } else if (var go = this as GameObject) {
+            Program.game.[Friend]scene.[Friend]objectsToCleanup.Add(go);
+            for (var child in go.[Friend]children) {
+                child.Destroy();
+            }
+            for (var component in go.[Friend]components) {
+                component.Destroy();
+            }
         }
+        Dispose();
     }
 
-    bool disposed = false;
-    public void Dispose() {
-        if (disposed) return;
-        disposed = true;
+    public static void Destroy(BaseObject object) {
+        object.Destroy();
+    }
 
-        Destroy(this);
-        delete this;
+    public void Dispose() {
+        if (isDisposed) return;
+        isDisposed = true;
+        isActive = false;
     }
 }

@@ -27,8 +27,9 @@ class ProjectileLifetime : Component {
         LifeRemaining -= frameTime;
 
         if (LifeRemaining <= 0) {
+            Console.WriteLine("Destroy Projectile");
             OnProjectileDestroyed.Invoke(this.gameObject);
-            Destroy(this.gameObject);
+            this.gameObject.Destroy();
         }
     }
 }

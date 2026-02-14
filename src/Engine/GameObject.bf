@@ -40,8 +40,22 @@ class GameObject : BaseObject {
     }
 
     public Scene scene { get; private set; };
-    List<GameObject> children = new List<GameObject>() ~ DeleteContainerAndDisposeItems!(_);
-    List<Component> components = new List<Component>() ~ DeleteContainerAndDisposeItems!(_);
+    List<GameObject> children = new List<GameObject>() ~ {
+        while (!children.IsEmpty) {
+            var child = children.PopBack();
+            child.Dispose();
+            delete child;
+        }
+        delete _;
+    };
+    List<Component> components = new List<Component>() ~ {
+        while (!components.IsEmpty) {
+            var component = components.PopBack();
+            component.Dispose();
+            delete component;
+        }
+        delete _;
+    };
 
     protected override void WakeInternal() {
         if (!IsActiveInHierarchy) return;
@@ -60,6 +74,8 @@ class GameObject : BaseObject {
     }
 
     public static GameObject Instantiate(Vector3 vector, Quaternion rotation, GameObject parent = null) {
+        if (parent != null && parent.[Friend]isDisposed) Runtime.FatalError("Tried to instantiate a GameObject with a disposed parent");
+
         var gameObject = new GameObject();
         gameObject.transform = .(vector, rotation, .(1,1,1));
         gameObject.parent = parent;
@@ -81,15 +97,6 @@ class GameObject : BaseObject {
         return component;
     }
 
-    public void RemoveComponent(Component component) {
-        component.Dispose();
-        components.Remove(component);
-    }
-
-    private void DestroyInternal() {
-        OnDestroy();
-    }
-
     public void Update(float frameTime) {
         for (var component in components) {
             if (!component.[Friend]startCalled && component.IsActive) {
@@ -102,16 +109,5 @@ class GameObject : BaseObject {
         for (var child in children) {
             child.Update(frameTime);
         }
-    }
-
-    public void OnDestroy() {
-        components.ClearAndDisposeItems();
-        children.ClearAndDisposeItems();
-    }
-
-    public new void Dispose() {
-        OnDestroy();
-
-        base.Dispose();
     }
 }
